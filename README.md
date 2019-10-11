@@ -6,7 +6,7 @@
 
 * [Snake.ino](https://github.com/DanyloMelnyk/RetroGames/blob/master/Snake.ino) - змійка на 1 гравця
 * [Snake2player.ino](https://github.com/DanyloMelnyk/RetroGames/blob/master/Snake2player.ino) - змійка на 2 гравців
-* [template.ino](https://github.com/DanyloMelnyk/RetroGames/blob/master/template.ino) - шаблон для написання програм
+* [template.ino](https://github.com/DanyloMelnyk/RetroGames/blob/master/template.ino) - шаблон для написання програм з коментарями
 
 ## Автори
 
