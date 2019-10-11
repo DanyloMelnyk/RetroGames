@@ -426,8 +426,8 @@ void calibrateJoystick() {
   joystickHome1.x = values.x / 10;
   joystickHome1.y = values.y / 10;
 
-  vaules.x = 0;
-  vaules.y = 0;
+  values.x = 0;
+  values.y = 0;
 
   for (int i = 0; i < 10; i++) {
     values.x += analogRead(Pin::joystickX2);
