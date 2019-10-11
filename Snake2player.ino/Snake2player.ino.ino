@@ -438,7 +438,6 @@ void calibrateJoystick() {
   joystickHome2.y = values.y / 10;
 }
 
-
 void initialize() {
   for (int i = 0; i < MATRIX_NUM; i++){
     matrix.shutdown(i, false);
@@ -453,7 +452,6 @@ void initialize() {
   snake2.row = random(ROW_NUM);
   snake2.col = random(COL_NUM);
 }
-
 
 void dumpGameBoard() {
   String buff = "\n\n\n";
