@@ -24,7 +24,7 @@ struct Pin {
 };
 
 // LED matrix brightness: between 0(darkest) and 15(brightest)
-const short intensity = 8;
+const short intensity = 3;
 
 // lower = faster message scrolling
 const short messageSpeed = 5;
@@ -79,7 +79,8 @@ Point snake2;
 Point food(-1, -1);
 
 // construct with default values in case the user turns off the calibration
-Coordinate joystickHome(500, 500);
+Coordinate joystickHome1(500, 500);
+Coordinate joystickHome2(500, 500);
 
 // snake parameters
 int snake1Length = initialSnakeLength; // choosed by the user in the config section for player 1
@@ -170,27 +171,23 @@ void scanJoystick() {
     if (snakeSpeed == 0) snakeSpeed = 1; // safety: speed can not be 0
 
     // determine the direction of the snake
-    analogRead(Pin::joystickY1) < joystickHome.y - joystickThreshold ? snake1Direction = down : 0; //up    : 0;
-    analogRead(Pin::joystickY1) > joystickHome.y + joystickThreshold ? snake1Direction = up : 0; //down  : 0;
-    analogRead(Pin::joystickX1) < joystickHome.x - joystickThreshold ? snake1Direction = left  : 0;
-    analogRead(Pin::joystickX1) > joystickHome.x + joystickThreshold ? snake1Direction = right : 0;
+    analogRead(Pin::joystickY1) < joystickHome1.y - joystickThreshold ? snake1Direction = down : 0; //up    : 0;
+    analogRead(Pin::joystickY1) > joystickHome1.y + joystickThreshold ? snake1Direction = up : 0; //down  : 0;
+    analogRead(Pin::joystickX1) < joystickHome1.x - joystickThreshold ? snake1Direction = left  : 0;
+    analogRead(Pin::joystickX1) > joystickHome1.x + joystickThreshold ? snake1Direction = right : 0;
 
     // ignore directional change by 180 degrees (no effect for non-moving snake)
     snake1Direction + 2 == previousDirection1 && previousDirection1 != 0 ? snake1Direction = previousDirection1 : 0;
     snake1Direction - 2 == previousDirection1 && previousDirection1 != 0 ? snake1Direction = previousDirection1 : 0;
 
-    analogRead(Pin::joystickY2) < joystickHome.y - joystickThreshold ? snake2Direction = down : 0; //up    : 0;
-    analogRead(Pin::joystickY2) > joystickHome.y + joystickThreshold ? snake2Direction = up : 0; //down  : 0;
-    analogRead(Pin::joystickX2) < joystickHome.x - joystickThreshold ? snake2Direction = left  : 0;
-    analogRead(Pin::joystickX2) > joystickHome.x + joystickThreshold ? snake2Direction = right : 0;
+    analogRead(Pin::joystickY2) < joystickHome2.y - joystickThreshold ? snake2Direction = down : 0; //up    : 0;
+    analogRead(Pin::joystickY2) > joystickHome2.y + joystickThreshold ? snake2Direction = up : 0; //down  : 0;
+    analogRead(Pin::joystickX2) < joystickHome2.x - joystickThreshold ? snake2Direction = left  : 0;
+    analogRead(Pin::joystickX2) > joystickHome2.x + joystickThreshold ? snake2Direction = right : 0;
 
     // ignore directional change by 180 degrees (no effect for non-moving snake)
     snake2Direction + 2 == previousDirection2 && previousDirection2 != 0 ? snake2Direction = previousDirection2 : 0;
     snake2Direction - 2 == previousDirection2 && previousDirection2 != 0 ? snake2Direction = previousDirection2 : 0;
-
-
-    // intelligently blink with the food
-    //setLEDM(food.row, food.col, millis() % 100 < 50 ? 1 : 0);
   }
 }
 
@@ -275,13 +272,13 @@ void calculateSnake() {
     snake1Length++;
 
     // increment all the snake body segments
-    for (int row = 0; row < ROW_NUM; row++) {
-      for (int col = 0; col < COL_NUM; col++) {
-        if (gameboard[row][col] > 0 ) {
-          gameboard[row][col]++;
-        }
-      }
-    }
+    //for (int row = 0; row < ROW_NUM; row++) {
+    //for (int col = 0; col < COL_NUM; col++) {
+    //    if (gameboard[row][col] > 0 ) {
+    //      gameboard[row][col]++;
+    //    }
+    //  }
+    //}
   }
 
   if (snake2.row == food.row && snake2.col == food.col) {
@@ -292,13 +289,13 @@ void calculateSnake() {
     snake2Length++;
 
     // increment all the snake body segments
-    for (int row = 0; row < ROW_NUM; row++) {
+    /*for (int row = 0; row < ROW_NUM; row++) {
       for (int col = 0; col < COL_NUM; col++) {
         if (gameboard[row][col] > 0 ) {
           gameboard[row][col]++;
         }
       }
-    }
+    }*/
   }
 
   // add new segment at the snake head location
@@ -346,6 +343,9 @@ void handleGameStates() {
     // re-init the game
     win1 = false;
     gameOver1 = false;
+    win2 = false;
+    gameOver2 = false;
+    
     snake1.row = random(ROW_NUM);
     snake1.col = random(COL_NUM);
 
@@ -361,7 +361,10 @@ void handleGameStates() {
     snake2Direction = 0;
     
     memset(gameboard, 0, sizeof(gameboard[0][0]) * COL_NUM * ROW_NUM);
-    matrix.clearDisplay(0);
+    
+    for (int i = 0; i < MATRIX_NUM; i++){
+      matrix.clearDisplay(i);
+    }
   }
 }
 
@@ -419,13 +422,20 @@ void calibrateJoystick() {
     values.y += analogRead(Pin::joystickY1);
   }
 
+
+  joystickHome1.x = values.x / 10;
+  joystickHome1.y = values.y / 10;
+
+  vaules.x = 0;
+  vaules.y = 0;
+
   for (int i = 0; i < 10; i++) {
     values.x += analogRead(Pin::joystickX2);
     values.y += analogRead(Pin::joystickY2);
   }
 
-  joystickHome.x = values.x / 20;
-  joystickHome.y = values.y / 20;
+  joystickHome2.x = values.x / 10;
+  joystickHome2.y = values.y / 10;
 }
 
 
@@ -619,14 +629,14 @@ void showSnakeMessage() {
       }
 
       // if the joystick is moved, exit the message
-      if (analogRead(Pin::joystickY1) < joystickHome.y - joystickThreshold
-              || analogRead(Pin::joystickY1) > joystickHome.y + joystickThreshold
-              || analogRead(Pin::joystickX1) < joystickHome.x - joystickThreshold
-              || analogRead(Pin::joystickX1) > joystickHome.x + joystickThreshold
-              || analogRead(Pin::joystickY2) < joystickHome.y - joystickThreshold
-              || analogRead(Pin::joystickY2) > joystickHome.y + joystickThreshold
-              || analogRead(Pin::joystickX2) < joystickHome.x - joystickThreshold
-              || analogRead(Pin::joystickX2) > joystickHome.x + joystickThreshold) {
+      if (analogRead(Pin::joystickY1) < joystickHome1.y - joystickThreshold
+              || analogRead(Pin::joystickY1) > joystickHome1.y + joystickThreshold
+              || analogRead(Pin::joystickX1) < joystickHome1.x - joystickThreshold
+              || analogRead(Pin::joystickX1) > joystickHome1.x + joystickThreshold
+              || analogRead(Pin::joystickY2) < joystickHome2.y - joystickThreshold
+              || analogRead(Pin::joystickY2) > joystickHome2.y + joystickThreshold
+              || analogRead(Pin::joystickX2) < joystickHome2.x - joystickThreshold
+              || analogRead(Pin::joystickX2) > joystickHome2.x + joystickThreshold) {
         return; // return the lambda function
       }
     }
@@ -637,14 +647,14 @@ void showSnakeMessage() {
   }
 
   // wait for joystick co come back
-  while (analogRead(Pin::joystickY1) < joystickHome.y - joystickThreshold
-              || analogRead(Pin::joystickY1) > joystickHome.y + joystickThreshold
-              || analogRead(Pin::joystickX1) < joystickHome.x - joystickThreshold
-              || analogRead(Pin::joystickX1) > joystickHome.x + joystickThreshold
-              || analogRead(Pin::joystickY2) < joystickHome.y - joystickThreshold
-              || analogRead(Pin::joystickY2) > joystickHome.y + joystickThreshold
-              || analogRead(Pin::joystickX2) < joystickHome.x - joystickThreshold
-              || analogRead(Pin::joystickX2) > joystickHome.x + joystickThreshold) {}
+  while (analogRead(Pin::joystickY1) < joystickHome1.y - joystickThreshold
+              || analogRead(Pin::joystickY1) > joystickHome1.y + joystickThreshold
+              || analogRead(Pin::joystickX1) < joystickHome1.x - joystickThreshold
+              || analogRead(Pin::joystickX1) > joystickHome1.x + joystickThreshold
+              || analogRead(Pin::joystickY2) < joystickHome2.y - joystickThreshold
+              || analogRead(Pin::joystickY2) > joystickHome2.y + joystickThreshold
+              || analogRead(Pin::joystickX2) < joystickHome2.x - joystickThreshold
+              || analogRead(Pin::joystickX2) > joystickHome2.x + joystickThreshold) {}
 
 }
 
@@ -662,14 +672,14 @@ void showGameOverMessage() {
       }
 
       // if the joystick is moved, exit the message
-      if (analogRead(Pin::joystickY1) < joystickHome.y - joystickThreshold
-              || analogRead(Pin::joystickY1) > joystickHome.y + joystickThreshold
-              || analogRead(Pin::joystickX1) < joystickHome.x - joystickThreshold
-              || analogRead(Pin::joystickX1) > joystickHome.x + joystickThreshold
-              || analogRead(Pin::joystickY2) < joystickHome.y - joystickThreshold
-              || analogRead(Pin::joystickY2) > joystickHome.y + joystickThreshold
-              || analogRead(Pin::joystickX2) < joystickHome.x - joystickThreshold
-              || analogRead(Pin::joystickX2) > joystickHome.x + joystickThreshold) {
+      if (analogRead(Pin::joystickY1) < joystickHome1.y - joystickThreshold
+              || analogRead(Pin::joystickY1) > joystickHome1.y + joystickThreshold
+              || analogRead(Pin::joystickX1) < joystickHome1.x - joystickThreshold
+              || analogRead(Pin::joystickX1) > joystickHome1.x + joystickThreshold
+              || analogRead(Pin::joystickY2) < joystickHome2.y - joystickThreshold
+              || analogRead(Pin::joystickY2) > joystickHome2.y + joystickThreshold
+              || analogRead(Pin::joystickX2) < joystickHome2.x - joystickThreshold
+              || analogRead(Pin::joystickX2) > joystickHome2.x + joystickThreshold) {
         return; // return the lambda function
       }
     }
@@ -680,14 +690,14 @@ void showGameOverMessage() {
   }
 
   // wait for joystick co come back
-  while (analogRead(Pin::joystickY1) < joystickHome.y - joystickThreshold
-              || analogRead(Pin::joystickY1) > joystickHome.y + joystickThreshold
-              || analogRead(Pin::joystickX1) < joystickHome.x - joystickThreshold
-              || analogRead(Pin::joystickX1) > joystickHome.x + joystickThreshold
-              || analogRead(Pin::joystickY2) < joystickHome.y - joystickThreshold
-              || analogRead(Pin::joystickY2) > joystickHome.y + joystickThreshold
-              || analogRead(Pin::joystickX2) < joystickHome.x - joystickThreshold
-              || analogRead(Pin::joystickX2) > joystickHome.x + joystickThreshold) {}
+  while (analogRead(Pin::joystickY1) < joystickHome1.y - joystickThreshold
+              || analogRead(Pin::joystickY1) > joystickHome1.y + joystickThreshold
+              || analogRead(Pin::joystickX1) < joystickHome1.x - joystickThreshold
+              || analogRead(Pin::joystickX1) > joystickHome1.x + joystickThreshold
+              || analogRead(Pin::joystickY2) < joystickHome2.y - joystickThreshold
+              || analogRead(Pin::joystickY2) > joystickHome2.y + joystickThreshold
+              || analogRead(Pin::joystickX2) < joystickHome2.x - joystickThreshold
+              || analogRead(Pin::joystickX2) > joystickHome2.x + joystickThreshold) {}
 }
 
 
@@ -731,17 +741,14 @@ void showScoreMessage(int score) {
       }
 
       // if the joystick is moved, exit the message
-      if (analogRead(Pin::joystickY1) < joystickHome.y - joystickThreshold
-              || analogRead(Pin::joystickY1) > joystickHome.y + joystickThreshold
-              || analogRead(Pin::joystickX1) < joystickHome.x - joystickThreshold
-              || analogRead(Pin::joystickX1) > joystickHome.x + joystickThreshold) {
-        return; // return the lambda function
-      }
-
-      if (analogRead(Pin::joystickY2) < joystickHome.y - joystickThreshold
-              || analogRead(Pin::joystickY2) > joystickHome.y + joystickThreshold
-              || analogRead(Pin::joystickX2) < joystickHome.x - joystickThreshold
-              || analogRead(Pin::joystickX2) > joystickHome.x + joystickThreshold) {
+      if (analogRead(Pin::joystickY1) < joystickHome1.y - joystickThreshold
+              || analogRead(Pin::joystickY1) > joystickHome1.y + joystickThreshold
+              || analogRead(Pin::joystickX1) < joystickHome1.x - joystickThreshold
+              || analogRead(Pin::joystickX1) > joystickHome1.x + joystickThreshold
+              || analogRead(Pin::joystickY2) < joystickHome2.y - joystickThreshold
+              || analogRead(Pin::joystickY2) > joystickHome2.y + joystickThreshold
+              || analogRead(Pin::joystickX2) < joystickHome2.x - joystickThreshold
+              || analogRead(Pin::joystickX2) > joystickHome2.x + joystickThreshold) {
         return; // return the lambda function
       }
     }
