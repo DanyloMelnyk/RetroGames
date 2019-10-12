@@ -1,7 +1,7 @@
 #include "LedControl.h" // бібліотека для роботи з матрицями
 
-#define MATRIX_NUM 3 // к-ксть матриць
-#define ROW_NUM 8 // к-ксть рядків
+#define MATRIX_NUM 5 // к-ксть матриць
+#define ROW_NUM 24 // к-ксть рядків
 #define COL_NUM 24 // к-ксть стовпців
 
 struct Pin {
@@ -48,13 +48,23 @@ struct Coordinate { // оголош типу даних Coordinate
 };
 
 void setLEDM(int row, int col, int v){ //встановлення стану діода(пікселя) на рядку row(нумерація зверху) і стовпці row(нум. зліва) на v(1-включений, 0 - викл)
-  if (col < 8 && col >= 0){
-    matrix.setLed(2, row, col, v);
-  } else if (col >= 8 && col < 16){
-    matrix.setLed(1, row, col - 8, v);
-  } else if (col >= 16 && col < 24){
-    matrix.setLed(0, row, col - 16, v);
+  if (row > 7 && row < 16){ // центральний ряд матриць
+    if (col < 8 && col >= 0){
+      matrix.setLed(3, row - 8, col, v);
+    } 
+    else if (col >= 8 && col < 16){
+      matrix.setLed(2, row - 8, col - 8, v);
+    } 
+    else if (col >= 16 && col < 24){
+      matrix.setLed(1, row - 8, col - 16, v);
+    }
   }
+  else if (row > 15){ // нижня матриця
+    matrix.setLed(0, row - 16, col - 8, v);
+  }
+  else { // верхня матриця
+    matrix.setLed(4, row, col - 8, v);
+  }  
 }
 
 int Dir1 = 0; // напрямок 1 гравця (0-не рух, up, down, right, left)
@@ -71,7 +81,6 @@ Coordinate jHome1(500, 500); // змінна для поч. положення �
 Coordinate jHome2(500, 500);
 
 int Speed = 1;
-const float logarithmity = 0.4; // крутизна характеристики потенціометра (-1 - лінійна, 1 - натуральна, >1 - крутіша)
 
 void scanJoystick() { // визнач напрямку
   int pDir1 = Dir1; // збереження минулого напрямку
