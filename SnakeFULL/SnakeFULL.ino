@@ -27,7 +27,7 @@ struct Pin {
 const short intensity = 3;
 
 // lower = faster message scrolling
-const short messageSpeed = 5;
+const short messageSpeed = 1;
 
 // initial snake length (1...63, recommended 3)
 const short initialSnakeLength = 3;
@@ -103,7 +103,7 @@ const short left   = 4; // 'left - 2' must be 'right'
 const int joystickThreshold = 160;
 
 // artificial logarithmity (steepness) of the potentiometer (-1 = linear, 1 = natural, bigger = steeper (recommended 0...1))
-const float logarithmity = 0.4;
+const float logarithmity = 3.5;
 
 // snake body segments storage !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! BOARD  !!!!!!!!!!!!!!!1
 int gameboard[ROW_NUM][COL_NUM] = {};
@@ -112,13 +112,19 @@ int gameboard[ROW_NUM][COL_NUM] = {};
 // -------------------------- functions -------------------------- //
 // --------------------------------------------------------------- //
 
+long time;
+
 void loop() {
   generateFood();    // if there is no food, generate one
 
-  long timestamp = millis();
+  while (millis() < 80 + time){
+    
+  }
  
   // intelligently blink with the food
   setLEDM(food.row, food.col, 1);
+
+  time = millis();
 
   do {
     scanJoystick();    // watches joystick movements
@@ -128,14 +134,16 @@ void loop() {
   handleGameStates();
 
   // intelligently blink with the food
-  while (millis() < 100 + timestamp){
+  while (millis() < 80 + time){
     
   }
 
   setLEDM(food.row, food.col, 0);
 
+  time = millis();
+
   // uncomment this if you want the current game board to be printed to the serial (slows down the game a bit)
-  dumpGameBoard();
+  //dumpGameBoard();
 }
 
 
@@ -165,7 +173,7 @@ void scanJoystick() {
   while (millis() < timestamp + snakeSpeed) {
     // calculate snake speed exponentially (10...1000ms)
     float raw = mapf(analogRead(Pin::potentiometer), 0, 1023, 0, 1);
-    snakeSpeed = mapf(pow(raw, 3.5), 0, 1, 10, 1000); // change the speed exponentially
+    snakeSpeed = mapf(pow(raw, logarithmity), 0, 1, 10, 1000); // change the speed exponentially
     if (snakeSpeed == 0) snakeSpeed = 1; // safety: speed can not be 0
 
     // determine the direction of the snake

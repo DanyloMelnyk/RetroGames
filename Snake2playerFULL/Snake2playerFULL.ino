@@ -27,7 +27,7 @@ struct Pin {
 const short intensity = 3;
 
 // lower = faster message scrolling
-const short messageSpeed = 5;
+const short messageSpeed = 1;
 
 // initial snake length (1...63, recommended 3)
 const short initialSnakeLength = 3;
@@ -121,13 +121,19 @@ int gameboard[ROW_NUM][COL_NUM] = {};
 // -------------------------- functions -------------------------- //
 // --------------------------------------------------------------- //
 
+long time;
+
 void loop() {
   generateFood();    // if there is no food, generate one
 
-  long timestamp = millis();
+  while (millis() < 80 + time){
+    
+  }
  
   // intelligently blink with the food
   setLEDM(food.row, food.col, 1);
+
+  time = millis();
 
   do {
     scanJoystick();    // watches joystick movements
@@ -137,14 +143,16 @@ void loop() {
   handleGameStates();
 
   // intelligently blink with the food
-  while (millis() < 100 + timestamp){
+   while (millis() < 100 + time){
     
   }
 
   setLEDM(food.row, food.col, 0);
 
+  time = millis();
+
   // uncomment this if you want the current game board to be printed to the serial (slows down the game a bit)
-  dumpGameBoard();
+  //dumpGameBoard();
 }
 
 
@@ -236,7 +244,7 @@ void calculateSnake() {
   }
 
   // if there is a snake body segment, this will cause the end of the game (snake must be moving)
-  if (gameboard[snake1.row][snake1.col] > 1 && snake1Direction != 0) {
+  if ((gameboard[snake1.row][snake1.col] > 1  || (snake1.row == snake2.row && snake1.col == snake2.col))&& snake1Direction != 0) {
     gameOver1 = true;
     return;
   }
@@ -270,7 +278,7 @@ void calculateSnake() {
       return;
   }
 
-  if (gameboard[snake2.row][snake2.col] > 1 && snake2Direction != 0) {
+  if ((gameboard[snake2.row][snake2.col] > 1 || (snake1.row == snake2.row && snake1.col == snake2.col)) && snake2Direction != 0) {
     gameOver2 = true;
     return;
   }
@@ -282,15 +290,6 @@ void calculateSnake() {
 
     // increment snake length
     snake1Length++;
-
-    // increment all the snake body segments
-    //for (int row = 0; row < ROW_NUM; row++) {
-    //for (int col = 0; col < COL_NUM; col++) {
-    //    if (gameboard[row][col] > 0 ) {
-    //      gameboard[row][col]++;
-    //    }
-    //  }
-    //}
   }
 
   if (snake2.row == food.row && snake2.col == food.col) {
@@ -299,15 +298,6 @@ void calculateSnake() {
 
     // increment snake length
     snake2Length++;
-
-    // increment all the snake body segments
-    /*for (int row = 0; row < ROW_NUM; row++) {
-      for (int col = 0; col < COL_NUM; col++) {
-        if (gameboard[row][col] > 0 ) {
-          gameboard[row][col]++;
-        }
-      }
-    }*/
   }
 
   // add new segment at the snake head location
@@ -467,9 +457,11 @@ void handleGameStates() {
     snake1.row = random(ROW_NUM);
     snake1.col = random(COL_NUM);
 
-    snake2.row = random(ROW_NUM);
-    snake2.col = random(COL_NUM);
-    
+    do {
+      snake2.row = random(ROW_NUM);
+      snake2.col = random(COL_NUM);
+    } while (snake1.col == snake2.col && snake1.row == snake2.row);
+
     food.row = -1;
     food.col = -1;
     snake1Length = initialSnakeLength;
@@ -567,8 +559,10 @@ void initialize() {
   snake1.row = random(ROW_NUM);
   snake1.col = random(COL_NUM);
 
-  snake2.row = random(ROW_NUM);
-  snake2.col = random(COL_NUM);
+  do {
+    snake2.row = random(ROW_NUM);
+    snake2.col = random(COL_NUM);
+  } while (snake1.col == snake2.col && snake1.row == snake2.row);  
 }
 
 void dumpGameBoard() {
