@@ -1,5 +1,8 @@
 #include "LedControl.h"
 
+#define ROW_NUM 24
+#define COL_NUM 24
+
 unsigned long lastRefreshTime = 0;
 int refreshInterval = 1;
 unsigned long lastMoveTime = 0;
@@ -146,8 +149,23 @@ void loop() {
 void gameOver() {
   isGameOn = false;
   overTime = now;
-  player1Score %= 7;
-  player2Score %= 7;
+
+  if (player1Score == 3) {
+    for (int i = 0; i < 5; i++) {
+      matrix.clearDisplay(i);
+    }
+    first_win();
+    player1Score = 0;
+    player2Score = 0;
+  }
+  if (player2Score == 3) {
+    for (int i = 0; i < 5; i++) {
+      matrix.clearDisplay(i);
+    }
+    second_win();
+    player1Score = 0;
+    player2Score = 0;
+  }
 
   for (int i = 0; i < 5; i++) {
     matrix.clearDisplay(i);
@@ -402,6 +420,112 @@ const PROGMEM bool digits[][8][8] = {
     {0, 0, 1, 1, 1, 1, 0, 0}
   }
 };
+
+const PROGMEM bool first_winMSG[8][97] = {
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0},
+  {0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0},
+  {0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0},
+  {0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0},
+  {0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0},
+  {0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0}
+};
+
+const PROGMEM bool second_winMSG[8][97] = {
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0},
+  {0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0},
+  {0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0},
+  {0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0},
+  {0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0},
+  {0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0}
+};
+
+void first_win() {
+  [&] {
+    //for (int d = 0; d < sizeof(snakeMessage[0]) - 7; d++) {
+    for (int d = 0; d < sizeof(second_winMSG[0]) - 8; d++) {
+      for (int col = 0; col < COL_NUM; col++) {
+        delay(1);
+        for (int row = 0; row < 8; row++) {
+          // this reads the byte from the PROGMEM and displays it on the screen
+          setLEDM(row + 8, col, pgm_read_byte(&(first_winMSG[row][col + d])));
+        }
+      }
+
+      // if the joystick is moved, exit the message
+      if (analogRead(Pin::joystickY1) < joystickHome1.y - joystickThreshold
+          || analogRead(Pin::joystickY1) > joystickHome1.y + joystickThreshold
+          || analogRead(Pin::joystickX1) < joystickHome1.x - joystickThreshold
+          || analogRead(Pin::joystickX1) > joystickHome1.x + joystickThreshold
+          || analogRead(Pin::joystickY2) < joystickHome2.y - joystickThreshold
+          || analogRead(Pin::joystickY2) > joystickHome2.y + joystickThreshold
+          || analogRead(Pin::joystickX2) < joystickHome2.x - joystickThreshold
+          || analogRead(Pin::joystickX2) > joystickHome2.x + joystickThreshold) {
+        return; // return the lambda function
+      }
+    }
+  }();
+
+  for (int i = 0; i < 5; i++) {
+    matrix.clearDisplay(i);
+  }
+
+  // wait for joystick co come back
+  while (analogRead(Pin::joystickY1) < joystickHome1.y - joystickThreshold
+         || analogRead(Pin::joystickY1) > joystickHome1.y + joystickThreshold
+         || analogRead(Pin::joystickX1) < joystickHome1.x - joystickThreshold
+         || analogRead(Pin::joystickX1) > joystickHome1.x + joystickThreshold
+         || analogRead(Pin::joystickY2) < joystickHome2.y - joystickThreshold
+         || analogRead(Pin::joystickY2) > joystickHome2.y + joystickThreshold
+         || analogRead(Pin::joystickX2) < joystickHome2.x - joystickThreshold
+         || analogRead(Pin::joystickX2) > joystickHome2.x + joystickThreshold) {}
+
+}
+
+void second_win() {
+  [&] {
+    //for (int d = 0; d < sizeof(snakeMessage[0]) - 7; d++) {
+    for (int d = 0; d < sizeof(second_winMSG[0]) - 8; d++) {
+      for (int col = 0; col < COL_NUM; col++) {
+        delay(1);
+        for (int row = 0; row < 8; row++) {
+          // this reads the byte from the PROGMEM and displays it on the screen
+          setLEDM(row + 8, col, pgm_read_byte(&(second_winMSG[row][col + d])));
+        }
+      }
+
+      // if the joystick is moved, exit the message
+      if (analogRead(Pin::joystickY1) < joystickHome1.y - joystickThreshold
+          || analogRead(Pin::joystickY1) > joystickHome1.y + joystickThreshold
+          || analogRead(Pin::joystickX1) < joystickHome1.x - joystickThreshold
+          || analogRead(Pin::joystickX1) > joystickHome1.x + joystickThreshold
+          || analogRead(Pin::joystickY2) < joystickHome2.y - joystickThreshold
+          || analogRead(Pin::joystickY2) > joystickHome2.y + joystickThreshold
+          || analogRead(Pin::joystickX2) < joystickHome2.x - joystickThreshold
+          || analogRead(Pin::joystickX2) > joystickHome2.x + joystickThreshold) {
+        return; // return the lambda function
+      }
+    }
+  }();
+
+  for (int i = 0; i < 5; i++) {
+    matrix.clearDisplay(i);
+  }
+
+  // wait for joystick co come back
+  while (analogRead(Pin::joystickY1) < joystickHome1.y - joystickThreshold
+         || analogRead(Pin::joystickY1) > joystickHome1.y + joystickThreshold
+         || analogRead(Pin::joystickX1) < joystickHome1.x - joystickThreshold
+         || analogRead(Pin::joystickX1) > joystickHome1.x + joystickThreshold
+         || analogRead(Pin::joystickY2) < joystickHome2.y - joystickThreshold
+         || analogRead(Pin::joystickY2) > joystickHome2.y + joystickThreshold
+         || analogRead(Pin::joystickX2) < joystickHome2.x - joystickThreshold
+         || analogRead(Pin::joystickX2) > joystickHome2.x + joystickThreshold) {}
+
+}
 
 void updateScore() {
   for (int i = 0; i < 8; i++) {
