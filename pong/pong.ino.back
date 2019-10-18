@@ -9,20 +9,16 @@ unsigned long lastMoveTime = 0;
 int moveInterval;
 unsigned long now = 0;
 unsigned long overTime = 100000000;
-
+int currentColumn = 0;
 int ballX;
 int ballY;
 int player1Score, player2Score;
-int player1Position = 3, player2Position = 3; // позиція 1 пікселя ракетки поч з 8 зліва
-
-int last_win = 0; // 0 - жоден, 1 - перший, 2 -другий
-
-boolean ballMovingUp = true; // true - рух вверх, false - вниз
-boolean ballMovingLeft = true; // true - наліво, false - направо
-boolean straight = false; //true - ігнор ліво|право
+int player1Position, player2Position;
+boolean ballMovingUp = true;
+boolean ballMovingLeft = true;
+boolean straight = false;
 boolean isGameOn = true;
-
-int shape[24][8] = { // ігрове поле
+int shape[24][8] = {
   {0, 0, 0, 0, 0, 0, 0, 0},
   {0, 0, 0, 0, 0, 0, 0, 0},
   {0, 0, 0, 0, 0, 0, 0, 0},
@@ -85,6 +81,7 @@ void calibrateJoystick() {
     values.y += analogRead(Pin::joystickY1);
   }
 
+
   joystickHome1.x = values.x / 10;
   joystickHome1.y = values.y / 10;
 
@@ -100,7 +97,8 @@ void calibrateJoystick() {
   joystickHome2.y = values.y / 10;
 }
 
-void scanJoystick() { // Обробка джойстиків
+// watches joystick movements & blinks with food
+void scanJoystick() {
   int Y1 = analogRead(Pin::joystickY1);
   int Y2 = analogRead(Pin::joystickY2);
 
@@ -124,7 +122,7 @@ void scanJoystick() { // Обробка джойстиків
 }
 
 void setup() {
-  for (int i = 0; i < 5; i++) { // ініціалізація матриць
+  for (int i = 0; i < 5; i++) {
     matrix.shutdown(i, false);
     matrix.setIntensity(i, 5);
     matrix.clearDisplay(i);
@@ -134,7 +132,7 @@ void setup() {
 
   player1Score = 0;
   player2Score = 0;
-  updateScore();
+  restartGame();
 }
 
 void loop() {
@@ -152,19 +150,19 @@ void gameOver() {
   isGameOn = false;
   overTime = now;
 
+  if (player1Score == 3) {
     for (int i = 0; i < 5; i++) {
       matrix.clearDisplay(i);
     }
-
-  if (player1Score == 3) {
     first_win();
-    last_win = 1;
     player1Score = 0;
     player2Score = 0;
   }
   if (player2Score == 3) {
+    for (int i = 0; i < 5; i++) {
+      matrix.clearDisplay(i);
+    }
     second_win();
-    last_win = 2;
     player1Score = 0;
     player2Score = 0;
   }
@@ -183,18 +181,9 @@ void gameOver() {
 
 void restartGame() {
   moveInterval = 300;
-  
-  if (last_win == 2){ // Подача від 2 гравця
-    ballY = 17;
-    ballMovingUp = true;
-  }
-  else // Подача від 1 гравця
-  {
-    ballY = 6;
-    ballMovingUp = false;
-  }
-
-  ballX = now % 8; 
+  ballX = now % 8;
+  ballY = 6;
+  ballMovingUp = false;
   ballMovingLeft = true;
   isGameOn = true;
 }
@@ -206,13 +195,13 @@ void updateBall() {
     else
       ballX++;
 
-    if (ballX <= 0) // зіткнення з лівою границею
+    if (ballX <= 0)
     {
       ballMovingLeft = false;
       ballX = 0;
     }
 
-    else if (ballX >= 7) // зіткнення з правою границею
+    else if (ballX >= 7)
     {
       ballMovingLeft = true;
       ballX = 7;
@@ -222,14 +211,14 @@ void updateBall() {
 
   if (ballMovingUp)
   {
-    if (ballY > 5)
+    if (ballY > 2)
       ballY -= random(2) + 1;
     else
       ballY--;
   }
   else
   {
-    if (ballY < 18)
+    if (ballY < 21)
       ballY += random(2) + 1;
     else
       ballY++;
@@ -244,21 +233,22 @@ void updateBall() {
   }
 
   if (ballY == 1 && ballX >= player2Position && ballX < player2Position + 3) {
-    if (ballX > 2 && ballX < 6)
-      ballX += 2 - random(3);
+    if (ballX > 4 && ballX < 19)
+      ballX -= random(6) - 2;
 
     ballMovingUp = false;
     moveInterval -= 20;
     //buzz();
   }
   else if (ballY == 22 && ballX >= player1Position && ballX < player1Position + 3) {
-    if (ballX > 2 && ballX < 6)
-      ballX += random(3) - 2;
+    if (ballX > 4 && ballX < 19)
+      ballX += random(6) - 2;
 
     ballMovingUp = true;
     moveInterval -= 20;
     //buzz();
   }
+
 }
 
 void buzz() {
@@ -266,7 +256,8 @@ void buzz() {
 }
 
 void update() {
-  if (now - lastMoveTime > moveInterval) { // очистка поля
+  //clear table;
+  if (now - lastMoveTime > moveInterval) {
     for (int i = 0; i < 24; i++) {
       for (int j = 0; j < 8; j++) {
         shape[i][j] = 0;
@@ -274,21 +265,21 @@ void update() {
     }
 
     for (int i = 0; i < 8; i++) {
-      if (i >= player1Position && i < player1Position + 3) { // відобразити 1 ракетку
+      if (i >= player1Position && i < player1Position + 3) {
         shape[23][i] = 1;
       } else {
         shape[23][i] = 0;
       }
-      if (i >= player2Position && i < player2Position + 3) { // відобразити 2 ракетку
+      if (i >= player2Position && i < player2Position + 3) {
         shape[0][i] = 1;
       } else {
         shape[0][i] = 0;
       }
     }
-
-    updateBall(); // переміщення м'яча
-    shape[ballY][ballX] = 1; // відобразити м'яч
-    
+    //update the ball
+    updateBall();
+    //draw the ball
+    shape[ballY][ballX] = 1;
     lastMoveTime = now;
   }
 }
@@ -321,6 +312,8 @@ void draw() {
       }
     }
 
+    currentColumn++;
+    currentColumn %= 8;
     lastRefreshTime = now;
   }
 }
@@ -452,7 +445,8 @@ const PROGMEM bool second_winMSG[8][97] = {
 
 void first_win() {
   [&] {
-    for (int d = 0; d < sizeof(second_winMSG[0]) - 16; d++) {
+    //for (int d = 0; d < sizeof(snakeMessage[0]) - 7; d++) {
+    for (int d = 0; d < sizeof(second_winMSG[0]) - 8; d++) {
       for (int col = 0; col < COL_NUM; col++) {
         delay(1);
         for (int row = 0; row < 8; row++) {
@@ -493,7 +487,8 @@ void first_win() {
 
 void second_win() {
   [&] {
-    for (int d = 0; d < sizeof(second_winMSG[0]) - 16; d++) {
+    //for (int d = 0; d < sizeof(snakeMessage[0]) - 7; d++) {
+    for (int d = 0; d < sizeof(second_winMSG[0]) - 8; d++) {
       for (int col = 0; col < COL_NUM; col++) {
         delay(1);
         for (int row = 0; row < 8; row++) {
