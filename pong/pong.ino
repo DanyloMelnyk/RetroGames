@@ -16,30 +16,30 @@ boolean ballMovingLeft = true;
 boolean straight = false;
 boolean isGameOn = true;
 int shape[24][8] = {
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0}
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0}
 };
 
 struct Pin {
@@ -98,7 +98,7 @@ void calibrateJoystick() {
 void scanJoystick() {
   int Y1 = analogRead(Pin::joystickY1);
   int Y2 = analogRead(Pin::joystickY2);
-  
+
   if (Y1 < joystickHome1.y - joystickThreshold && player1Position > 0) // down
   {
     player1Position--;
@@ -118,54 +118,50 @@ void scanJoystick() {
   }
 }
 
-void setup(){
-  for (int i = 0; i < 5; i++){
+void setup() {
+  for (int i = 0; i < 5; i++) {
     matrix.shutdown(i, false);
     matrix.setIntensity(i, 5);
     matrix.clearDisplay(i);
   }
 
   calibrateJoystick();
-  
-  //delay(2000);
-  //Serial.begin(9600);
-  player1Score = 0; 
+
+  player1Score = 0;
   player2Score = 0;
   restartGame();
 }
- 
-void loop(){
+
+void loop() {
   now = millis();
-  if(isGameOn){
+  if (isGameOn) {
     scanJoystick();
     update();
-  }else{
-    updateScore(); 
+  } else {
+    updateScore();
   }
   draw();
 }
 
-void gameOver(){
-    isGameOn = false;
-    overTime = now;
-    player1Score %= 7;
-    player2Score %= 7;
+void gameOver() {
+  isGameOn = false;
+  overTime = now;
+  player1Score %= 7;
+  player2Score %= 7;
 
-for (int i = 0; i < 5; i++){
-  matrix.clearDisplay(i);
-}
-    
-    //clearPins();
-    
-    //int note[] = {700, 600, 500, 400, 300, 200};
-    //for(int i = 0; i < 6; i++){
-    //  tone(speakerPin, note[i], 150);
-    //  delay(200);
-    //}
-   
+  for (int i = 0; i < 5; i++) {
+    matrix.clearDisplay(i);
+  }
+
+  //int note[] = {700, 600, 500, 400, 300, 200};
+  //for(int i = 0; i < 6; i++){
+  //  tone(speakerPin, note[i], 150);
+  //  delay(200);
+  //}
+
 }
 
-void restartGame(){
+void restartGame() {
   moveInterval = 300;
   ballX = now % 8;
   ballY = 6;
@@ -174,97 +170,91 @@ void restartGame(){
   isGameOn = true;
 }
 
-void updateBall(){
-  if (!straight){
-  if(ballMovingLeft)
-    ballX--;
-  else
-    ballX++;
-    
-  if(ballX <= 0)
-  {
-    ballMovingLeft = false;
-    ballX = 0;
+void updateBall() {
+  if (!straight) {
+    if (ballMovingLeft)
+      ballX--;
+    else
+      ballX++;
+
+    if (ballX <= 0)
+    {
+      ballMovingLeft = false;
+      ballX = 0;
+    }
+
+    else if (ballX >= 7)
+    {
+      ballMovingLeft = true;
+      ballX = 7;
+    }
+
   }
-    
-  else if (ballX >= 7)
-  {
-     ballMovingLeft = true;
-     ballX = 7;
-  }
-   
-  }
-    
-  if(ballMovingUp)
+
+  if (ballMovingUp)
   {
     if (ballY > 2)
-        ballY -= random(2) + 1;
-    else        
+      ballY -= random(2) + 1;
+    else
       ballY--;
   }
   else
   {
     if (ballY < 21)
-        ballY += random(2) + 1;
-    else        
+      ballY += random(2) + 1;
+    else
       ballY++;
   }
-  
-  if(ballY == 0){
+
+  if (ballY == 0) {
     player1Score++;
     gameOver();
-  }else if (ballY == 23){
+  } else if (ballY == 23) {
     player2Score++;
     gameOver();
   }
-  
-  if(ballY == 1 && ballX >= player2Position && ballX < player2Position + 3){
+
+  if (ballY == 1 && ballX >= player2Position && ballX < player2Position + 3) {
     if (ballX > 4 && ballX < 19)
       ballX -= random(6) - 2;
-      
+
     ballMovingUp = false;
     moveInterval -= 20;
     //buzz();
   }
-  else if(ballY == 22 && ballX >= player1Position && ballX < player1Position + 3){
+  else if (ballY == 22 && ballX >= player1Position && ballX < player1Position + 3) {
     if (ballX > 4 && ballX < 19)
       ballX += random(6) - 2;
-    
+
     ballMovingUp = true;
     moveInterval -= 20;
     //buzz();
   }
-      
+
 }
 
-void buzz(){
-  //tone(speakerPin, 300, 20); 
+void buzz() {
+  //tone(speakerPin, 300, 20);
 }
 
-void update(){
+void update() {
   //clear table;
-  if(now - lastMoveTime > moveInterval){
-    for(int i = 0; i < 24; i++){
-      for(int j = 0; j < 8; j++){
+  if (now - lastMoveTime > moveInterval) {
+    for (int i = 0; i < 24; i++) {
+      for (int j = 0; j < 8; j++) {
         shape[i][j] = 0;
       }
     }
-    
-    //update player positions
-    //int player1PotansValue = analogRead(A3);
-    //int player2PotansValue = analogRead(A1);
-    //Serial.println(player2PotansValue);
-    //player1Position = player1PotansValue * 6 / 1024;
-    //player2Position = player2PotansValue * 6 / 1024;
-    for(int i = 0; i < 8; i++){
-      if(i >= player1Position && i < player1Position + 3){
+
+    for (int i = 0; i < 8; i++) {
+      if (i >= player1Position && i < player1Position + 3) {
         shape[23][i] = 1;
-      }else{
+      } else {
         shape[23][i] = 0;
       }
-      if(i >= player2Position && i < player2Position + 3){
+      if (i >= player2Position && i < player2Position + 3) {
         shape[0][i] = 1;
-      }else{
+      } else {
         shape[0][i] = 0;
       }
     }
@@ -276,58 +266,151 @@ void update(){
   }
 }
 
-void setLEDM(int row, int col, int v){
-  if (row > 7 && row < 16){ // центральний ряд матриць
-    if (col < 8 && col >= 0){
+void setLEDM(int row, int col, int v) {
+  if (row > 7 && row < 16) { // центральний ряд матриць
+    if (col < 8 && col >= 0) {
       matrix.setLed(3, row - 8, col, v);
-    } 
-    else if (col >= 8 && col < 16){
+    }
+    else if (col >= 8 && col < 16) {
       matrix.setLed(2, row - 8, col - 8, v);
-    } 
-    else if (col >= 16 && col < 24){
+    }
+    else if (col >= 16 && col < 24) {
       matrix.setLed(1, row - 8, col - 16, v);
     }
   }
-  else if (row > 15){ // нижня матриця
+  else if (row > 15) { // нижня матриця
     matrix.setLed(0, row - 16, col - 8, v);
   }
   else { // верхня матриця
     matrix.setLed(4, row, col - 8, v);
-  }  
+  }
 }
 
-void draw(){
-  if(now - lastRefreshTime >= refreshInterval){
-    for(int i = 0; i < 24; i++){
-      for (int j = 0; j < 8; j++){
-        setLEDM(i, j+8, shape[i][j]==1 ? HIGH:LOW); 
+void draw() {
+  if (now - lastRefreshTime >= refreshInterval) {
+    for (int i = 0; i < 24; i++) {
+      for (int j = 0; j < 8; j++) {
+        setLEDM(i, j + 8, shape[i][j] == 1 ? HIGH : LOW);
       }
     }
-    
+
     currentColumn++;
     currentColumn %= 8;
-    lastRefreshTime = now; 
+    lastRefreshTime = now;
   }
 }
 
-void updateScore(){
-  for(int i = 0; i < 8; i++){
-    for(int j = 0; j < 24; j++){
-      shape[i][j] = 0;
+const PROGMEM bool digits[][8][8] = {
+  {
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 1, 1, 1, 1, 0, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 1, 1, 0, 1, 1, 1, 0},
+    {0, 1, 1, 1, 0, 1, 1, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 0, 1, 1, 1, 1, 0, 0}
+  },
+  {
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 1, 1, 0, 0, 0},
+    {0, 0, 0, 1, 1, 0, 0, 0},
+    {0, 0, 1, 1, 1, 0, 0, 0},
+    {0, 0, 0, 1, 1, 0, 0, 0},
+    {0, 0, 0, 1, 1, 0, 0, 0},
+    {0, 0, 0, 1, 1, 0, 0, 0},
+    {0, 1, 1, 1, 1, 1, 1, 0}
+  },
+  {
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 1, 1, 1, 1, 0, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 0, 0, 0, 0, 1, 1, 0},
+    {0, 0, 0, 0, 1, 1, 0, 0},
+    {0, 0, 1, 1, 0, 0, 0, 0},
+    {0, 1, 1, 0, 0, 0, 0, 0},
+    {0, 1, 1, 1, 1, 1, 1, 0}
+  },
+  {
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 1, 1, 1, 1, 0, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 0, 0, 0, 0, 1, 1, 0},
+    {0, 0, 0, 1, 1, 1, 0, 0},
+    {0, 0, 0, 0, 0, 1, 1, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 0, 1, 1, 1, 1, 0, 0}
+  },
+  {
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 1, 1, 0, 0},
+    {0, 0, 0, 1, 1, 1, 0, 0},
+    {0, 0, 1, 0, 1, 1, 0, 0},
+    {0, 1, 0, 0, 1, 1, 0, 0},
+    {0, 1, 1, 1, 1, 1, 1, 0},
+    {0, 0, 0, 0, 1, 1, 0, 0},
+    {0, 0, 0, 0, 1, 1, 0, 0}
+  },
+  {
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 1, 1, 1, 1, 1, 1, 0},
+    {0, 1, 1, 0, 0, 0, 0, 0},
+    {0, 1, 1, 1, 1, 1, 0, 0},
+    {0, 0, 0, 0, 0, 1, 1, 0},
+    {0, 0, 0, 0, 0, 1, 1, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 0, 1, 1, 1, 1, 0, 0}
+  },
+  {
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 1, 1, 1, 1, 0, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 1, 1, 0, 0, 0, 0, 0},
+    {0, 1, 1, 1, 1, 1, 0, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 0, 1, 1, 1, 1, 0, 0}
+  },
+  {
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 1, 1, 1, 1, 1, 1, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 0, 0, 0, 1, 1, 0, 0},
+    {0, 0, 0, 0, 1, 1, 0, 0},
+    {0, 0, 0, 1, 1, 0, 0, 0},
+    {0, 0, 0, 1, 1, 0, 0, 0},
+    {0, 0, 0, 1, 1, 0, 0, 0}
+  },
+  {
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 1, 1, 1, 1, 0, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 0, 1, 1, 1, 1, 0, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 0, 1, 1, 1, 1, 0, 0}
+  },
+  {
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 1, 1, 1, 1, 0, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 0, 1, 1, 1, 1, 1, 0},
+    {0, 0, 0, 0, 0, 1, 1, 0},
+    {0, 1, 1, 0, 0, 1, 1, 0},
+    {0, 0, 1, 1, 1, 1, 0, 0}
+  }
+};
+
+void updateScore() {
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++) {
+      matrix.setLed(1, 7 - i, j, pgm_read_byte(&(digits[player2Score][j][i])));
+      matrix.setLed(3, i, 7 - j, pgm_read_byte(&(digits[player1Score][j][i])));
     }
   }
-  
-  for(int i = 0; i < player2Score; i++){
-    for(int j = 0; j < i + 1; j++){
-      shape[j][6 - i] = 1;
-    }
-  }
-  
-  for(int i = 0; i < player1Score; i++){
-    for(int j = 0; j < i + 1; j++){
-      shape[7 - j][i + 1] = 1;
-    }
-  }
-  if(now - overTime > 3000)
+
+  if (now - overTime > 3000)
     restartGame();
 }
