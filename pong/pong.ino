@@ -237,9 +237,11 @@ void updateBall() {
 
   if (ballY == 0) {
     player1Score++;
+    last_win = 1;
     gameOver();
   } else if (ballY == 23) {
     player2Score++;
+    last_win = 2;
     gameOver();
   }
 
