@@ -1,10 +1,9 @@
+#include "LedControl.h"
+
 unsigned long lastRefreshTime = 0;
 int refreshInterval = 1;
 unsigned long lastMoveTime = 0;
 int moveInterval;
-int rowPins[8] = {0,1,2,3,4,5,6,7};
-int colPins[3] = {8,9,10};
-int speakerPin = 11;
 unsigned long now = 0;
 unsigned long overTime = 100000000;
 int currentColumn = 0;
@@ -14,22 +13,58 @@ int player1Score, player2Score;
 int player1Position, player2Position;
 boolean ballMovingUp = true;
 boolean ballMovingLeft = true;
+boolean straight = false;
 boolean isGameOn = true;
-int shape[8][24] = {
-  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+int shape[24][8] = {
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0}
 };
 
+struct Pin {
+  static const short joystickX1 = A2;   // joystick X axis pin for player 1
+  static const short joystickY1 = A3;   // joystick Y axis pin for player 1
+
+  static const short joystickX2 = A0;   // joystick X axis pin for player 1
+  static const short joystickY2 = A1;   // joystick Y axis pin for player 1
+
+  static const short potentiometer = A7; // potentiometer for snake speed control
+
+  static const short CLK = 10;   // clock for LED matrix
+  static const short CS  = 11;  // chip-select for LED matrix
+  static const short DIN = 12; // data-in for LED matrix
+};
+
+LedControl matrix(Pin::DIN, Pin::CLK, Pin::CS, 5);
+
 void setup(){
-  for(int i = 0; i < 13; i++){
-    //pinMode(i, OUTPUT); 
+  for (int i = 0; i < 5; i++){
+    matrix.shutdown(i, false);
+    matrix.setIntensity(i, 5);
+    matrix.clearDisplay(i);
   }
+  
   delay(2000);
   //Serial.begin(9600);
   player1Score = 0; 
@@ -52,7 +87,7 @@ void gameOver(){
     overTime = now;
     player1Score %= 7;
     player2Score %= 7;
-    clearPins();
+    //clearPins();
     
     //int note[] = {700, 600, 500, 400, 300, 200};
     //for(int i = 0; i < 6; i++){
@@ -62,51 +97,80 @@ void gameOver(){
    
 }
 
-void clearPins(){
+/*void clearPins(){
   for(int i = 0; i < 11; i++){
     digitalWrite(i, 0);
   }
-}
+}*/
 
 void restartGame(){
-  moveInterval = 700;
+  moveInterval = 300;
   ballX = now % 8;
   ballY = 6;
-  ballMovingUp = true;
+  ballMovingUp = false;
   ballMovingLeft = true;
   isGameOn = true;
 }
 
 void updateBall(){
+  if (!straight){
   if(ballMovingLeft)
     ballX--;
   else
     ballX++;
-  if(ballX == 0)
+    
+  if(ballX <= 0)
+  {
     ballMovingLeft = false;
-  else if (ballX == 23)
-    ballMovingLeft = true;
+    ballX = 0;
+  }
+    
+  else if (ballX >= 7)
+  {
+     ballMovingLeft = true;
+     ballX = 7;
+  }
+   
+  }
     
   if(ballMovingUp)
-    ballY--;
+  {
+    if (ballY > 2)
+        ballY -= random(2) + 1;
+    else        
+      ballY--;
+  }
   else
-    ballY++;
+  {
+    if (ballY < 21)
+        ballY += random(2) + 1;
+    else        
+      ballY++;
+  }
+  
   if(ballY == 0){
     player1Score++;
     gameOver();
-  }else if (ballY == 7){
+  }else if (ballY == 23){
     player2Score++;
     gameOver();
   }
+  
   if(ballY == 1 && ballX >= player2Position && ballX < player2Position + 3){
+    if (ballX > 1 && ballX < 22)
+      ballX -= random(5) - 2;
+      
     ballMovingUp = false;
     moveInterval -= 20;
-    buzz();
+    //buzz();
   }
-  else if(ballY == 6 && ballX >= player1Position && ballX < player1Position + 3){
+  else if(ballY == 22 && ballX >= player1Position && ballX < player1Position + 3){
+    if (ballX > 1 && ballX < 22)
+      ballX += random(5) - 2;
+    
     ballMovingUp = true;
     moveInterval -= 20;
-    buzz();
+    //buzz();
   }
       
 }
@@ -118,8 +182,8 @@ void buzz(){
 void update(){
   //clear table;
   if(now - lastMoveTime > moveInterval){
-    for(int i = 0; i < 8; i++){
-      for(int j = 0; j < 24; j++){
+    for(int i = 0; i < 24; i++){
+      for(int j = 0; j < 8; j++){
         shape[i][j] = 0;
       }
     }
@@ -130,11 +194,11 @@ void update(){
     //Serial.println(player2PotansValue);
     player1Position = player1PotansValue * 6 / 1024;
     player2Position = player2PotansValue * 6 / 1024;
-    for(int i = 0; i < 24; i++){
+    for(int i = 0; i < 8; i++){
       if(i >= player1Position && i < player1Position + 3){
-        shape[7][i] = 1;
+        shape[23][i] = 1;
       }else{
-        shape[7][i] = 0;
+        shape[23][i] = 0;
       }
       if(i >= player2Position && i < player2Position + 3){
         shape[0][i] = 1;
@@ -172,14 +236,14 @@ void setLEDM(int row, int col, int v){
 
 void draw(){
   if(now - lastRefreshTime >= refreshInterval){
-    for(int i = 0; i < 8; i++){
-      for (int j = 0; j < 24; j++){
-        setLEDM(i, j, shape[i][j]==1 ? HIGH:LOW); 
+    for(int i = 0; i < 24; i++){
+      for (int j = 0; j < 8; j++){
+        setLEDM(i, j+8, shape[i][j]==1 ? HIGH:LOW); 
       }
     }
     
     currentColumn++;
-    currentColumn %= 24;
+    currentColumn %= 8;
     lastRefreshTime = now; 
   }
 }
