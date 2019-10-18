@@ -56,7 +56,67 @@ struct Pin {
   static const short DIN = 12; // data-in for LED matrix
 };
 
+struct Coordinate {
+  int x = 0, y = 0;
+  Coordinate(int x = 0, int y = 0): x(x), y(y) {}
+};
+
+// construct with default values in case the user turns off the calibration
+Coordinate joystickHome1(500, 500);
+Coordinate joystickHome2(500, 500);
+
+// threshold where movement of the joystick will be accepted
+const int joystickThreshold = 160;
+
 LedControl matrix(Pin::DIN, Pin::CLK, Pin::CS, 5);
+
+void calibrateJoystick() {
+  Coordinate values;
+
+  for (int i = 0; i < 10; i++) {
+    values.x += analogRead(Pin::joystickX1);
+    values.y += analogRead(Pin::joystickY1);
+  }
+
+
+  joystickHome1.x = values.x / 10;
+  joystickHome1.y = values.y / 10;
+
+  values.x = 0;
+  values.y = 0;
+
+  for (int i = 0; i < 10; i++) {
+    values.x += analogRead(Pin::joystickX2);
+    values.y += analogRead(Pin::joystickY2);
+  }
+
+  joystickHome2.x = values.x / 10;
+  joystickHome2.y = values.y / 10;
+}
+
+// watches joystick movements & blinks with food
+void scanJoystick() {
+  int Y1 = analogRead(Pin::joystickY1);
+  int Y2 = analogRead(Pin::joystickY2);
+  
+  if (Y1 < joystickHome1.y - joystickThreshold && player1Position > 0) // down
+  {
+    player1Position--;
+  }
+  else if (Y1 > joystickHome1.y + joystickThreshold && player1Position < 5) // up
+  {
+    player1Position++;
+  }
+
+  if (Y2 < joystickHome2.y - joystickThreshold && player2Position > 0) // down
+  {
+    player2Position--;
+  }
+  else if (Y2 > joystickHome2.y + joystickThreshold && player2Position < 5) // up
+  {
+    player2Position++;
+  }
+}
 
 void setup(){
   for (int i = 0; i < 5; i++){
@@ -64,8 +124,10 @@ void setup(){
     matrix.setIntensity(i, 5);
     matrix.clearDisplay(i);
   }
+
+  calibrateJoystick();
   
-  delay(2000);
+  //delay(2000);
   //Serial.begin(9600);
   player1Score = 0; 
   player2Score = 0;
@@ -75,6 +137,7 @@ void setup(){
 void loop(){
   now = millis();
   if(isGameOn){
+    scanJoystick();
     update();
   }else{
     updateScore(); 
@@ -87,6 +150,11 @@ void gameOver(){
     overTime = now;
     player1Score %= 7;
     player2Score %= 7;
+
+for (int i = 0; i < 5; i++){
+  matrix.clearDisplay(i);
+}
+    
     //clearPins();
     
     //int note[] = {700, 600, 500, 400, 300, 200};
@@ -96,12 +164,6 @@ void gameOver(){
     //}
    
 }
-
-/*void clearPins(){
-  for(int i = 0; i < 11; i++){
-    digitalWrite(i, 0);
-  }
-}*/
 
 void restartGame(){
   moveInterval = 300;
@@ -157,16 +219,16 @@ void updateBall(){
   }
   
   if(ballY == 1 && ballX >= player2Position && ballX < player2Position + 3){
-    if (ballX > 1 && ballX < 22)
-      ballX -= random(5) - 2;
+    if (ballX > 4 && ballX < 19)
+      ballX -= random(6) - 2;
       
     ballMovingUp = false;
     moveInterval -= 20;
     //buzz();
   }
   else if(ballY == 22 && ballX >= player1Position && ballX < player1Position + 3){
-    if (ballX > 1 && ballX < 22)
-      ballX += random(5) - 2;
+    if (ballX > 4 && ballX < 19)
+      ballX += random(6) - 2;
     
     ballMovingUp = true;
     moveInterval -= 20;
@@ -189,11 +251,11 @@ void update(){
     }
     
     //update player positions
-    int player1PotansValue = analogRead(A3);
-    int player2PotansValue = analogRead(A1);
+    //int player1PotansValue = analogRead(A3);
+    //int player2PotansValue = analogRead(A1);
     //Serial.println(player2PotansValue);
-    player1Position = player1PotansValue * 6 / 1024;
-    player2Position = player2PotansValue * 6 / 1024;
+    //player1Position = player1PotansValue * 6 / 1024;
+    //player2Position = player2PotansValue * 6 / 1024;
     for(int i = 0; i < 8; i++){
       if(i >= player1Position && i < player1Position + 3){
         shape[23][i] = 1;
