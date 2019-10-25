@@ -6,11 +6,11 @@
 
 int MODE = 1; // 0 - menu, 1 - snake, 2 - pong
 
-struct Coordinate
+struct Point
 {
-  int x = 0, y = 0;
+  int row = 0, col = 0;
 
-  Coordinate(int x = 0, int y = 0): x(x), y(y){}
+  Point(int row = 0, int col = 0): row(row), col(col){}
 };
 
 struct Pin
@@ -35,8 +35,8 @@ const short intensity = 3;
 const short messageSpeed = 1;
 
 // construct with default values in case the user turns off the calibration
-Coordinate joystickHome1(500, 500);
-Coordinate joystickHome2(500, 500);
+Point joystickHome1(500, 500);
+Point joystickHome2(500, 500);
 
 // threshold where movement of the joystick will be accepted
 const int joystickThreshold = 160;
@@ -101,11 +101,6 @@ bool gameOver1 = false;
 bool win2 = false;
 bool gameOver2 = false;
 
-struct Point {
-  int row = 0, col = 0;
-  Point(int row = 0, int col = 0): row(row), col(col) {}
-};
-
 // primary snake head coordinates (snake head), it will be randomly generated
 Point snake1;
 Point snake2;
@@ -121,57 +116,40 @@ int snake1Direction = 0; // if it is 0, the snake does not move
 int snake2Direction = 0; // if it is 0, the snake does not move
 
 // direction constants
-const short up     = 1;
-const short right  = 2;
-const short down   = 3; // 'down - 2' must be 'up'
-const short left   = 4; // 'left - 2' must be 'right'
+const short up = 1;
+const short right = 2;
+const short down = 3; // 'down - 2' must be 'up'
+const short left = 4; // 'left - 2' must be 'right'
 
 // snake body segments storage !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! BOARD  !!!!!!!!!!!!!!!1
 int gameboard[ROW_NUM][COL_NUM] = {};
-
-
-//void first_win();
-//void second_win();
-//void showScoreMessage(int i);
-//void unrollSnake();
-//void calculateSnake();
-//void generateFood();
-//void updateScore();
-//void update();
-//void draw();
-//void handleGameStates();
-//float mapf(int analog_read, int i, int i1, int i2, int i3);
-//void initialize();
-
-
-
 
 //// common
 
 void calibrateJoystick()
 {
-  Coordinate values;
+  Point values;
 
   for (int i = 0; i < 10; i++)
   {
-    values.x += analogRead(Pin::joystickX1);
-    values.y += analogRead(Pin::joystickY1);
+    values.row += analogRead(Pin::joystickX1);
+    values.col += analogRead(Pin::joystickY1);
   }
 
-  joystickHome1.x = values.x / 10;
-  joystickHome1.y = values.y / 10;
+  joystickHome1.row = values.row / 10;
+  joystickHome1.col = values.col / 10;
 
-  values.x = 0;
-  values.y = 0;
+  values.row = 0;
+  values.col = 0;
 
   for (int i = 0; i < 10; i++)
   {
-    values.x += analogRead(Pin::joystickX2);
-    values.y += analogRead(Pin::joystickY2);
+    values.row += analogRead(Pin::joystickX2);
+    values.col += analogRead(Pin::joystickY2);
   }
 
-  joystickHome2.x = values.x / 10;
-  joystickHome2.y = values.y / 10;
+  joystickHome2.row = values.row / 10;
+  joystickHome2.col = values.col / 10;
 }
 
 void scanJoystick()
@@ -182,45 +160,50 @@ void scanJoystick()
 
   if (MODE == 2)
   {
-    if (Y1 < joystickHome1.y - joystickThreshold && player1Position > 0) // down
+    if (Y1 < joystickHome1.col - joystickThreshold && player1Position > 0) // down
     {
       player1Position--;
     }
-    else if (Y1 > joystickHome1.y + joystickThreshold && player1Position < 5) // up
+    else if (Y1 > joystickHome1.col + joystickThreshold && player1Position < 5) // up
     {
       player1Position++;
     }
 
-    if (Y2 < joystickHome2.y - joystickThreshold && player2Position < 5) // up
+    if (Y2 < joystickHome2.col - joystickThreshold && player2Position < 5) // up
     {
       player2Position++;
     }
-    else if (Y2 > joystickHome2.y + joystickThreshold && player2Position > 0) // down
+    else if (Y2 > joystickHome2.col + joystickThreshold && player2Position > 0) // down
     {
       player2Position--;
     }
   }
   else if (MODE == 1)
   {
-    int X1 = analogRead(Pin::joystickX1);
-    int X2 = analogRead(Pin::joystickX2);
-    
+   
+
     int previousDirection1 = snake1Direction; // save the last direction
     int previousDirection2 = snake2Direction; // save the last direction
     long timestamp = millis();
 
     while (millis() < timestamp + snakeSpeed)
     {
+      int X1 = analogRead(Pin::joystickX1);
+      int X2 = analogRead(Pin::joystickX2);
+
+      int Y1 = analogRead(Pin::joystickY1);
+      int Y2 = analogRead(Pin::joystickY2);
+  
       // calculate snake speed exponentially (10...1000ms)
       float raw = mapf(analogRead(Pin::potentiometer), 0, 1023, 0, 1);
       snakeSpeed = mapf(pow(raw, 3.5), 0, 1, 10, 1000); // change the speed exponentially
       if (snakeSpeed == 0) snakeSpeed = 1; // safety: speed can not be 0
 
       // determine the direction of the snake
-      Y1 < joystickHome1.y - joystickThreshold ? snake1Direction = down : 0; //up    : 0;
-      Y1 > joystickHome1.y + joystickThreshold ? snake1Direction = up : 0; //down  : 0;
-      X1 < joystickHome1.x - joystickThreshold ? snake1Direction = left : 0;
-      X1 > joystickHome1.x + joystickThreshold ? snake1Direction = right : 0;
+      Y1 < joystickHome1.col - joystickThreshold ? snake1Direction = down : 0; //up    : 0;
+      Y1 > joystickHome1.col + joystickThreshold ? snake1Direction = up : 0; //down  : 0;
+      X1 < joystickHome1.row - joystickThreshold ? snake1Direction = left : 0;
+      X1 > joystickHome1.row + joystickThreshold ? snake1Direction = right : 0;
 
       // ignore directional change by 180 degrees (no effect for non-moving snake)
       snake1Direction + 2 == previousDirection1 && previousDirection1 != 0
@@ -230,10 +213,10 @@ void scanJoystick()
         ? snake1Direction = previousDirection1
         : 0;
 
-      Y2 < joystickHome2.y - joystickThreshold ? snake2Direction = down : 0; //up    : 0;
-      Y2 > joystickHome2.y + joystickThreshold ? snake2Direction = up : 0; //down  : 0;
-      X2 < joystickHome2.x - joystickThreshold ? snake2Direction = left : 0;
-      X2 > joystickHome2.x + joystickThreshold ? snake2Direction = right : 0;
+      Y2 < joystickHome2.col - joystickThreshold ? snake2Direction = down : 0; //up    : 0;
+      Y2 > joystickHome2.col + joystickThreshold ? snake2Direction = up : 0; //down  : 0;
+      X2 < joystickHome2.row - joystickThreshold ? snake2Direction = left : 0;
+      X2 > joystickHome2.row + joystickThreshold ? snake2Direction = right : 0;
 
       // ignore directional change by 180 degrees (no effect for non-moving snake)
       snake2Direction + 2 == previousDirection2 && previousDirection2 != 0
@@ -276,7 +259,8 @@ void setLEDM(int row, int col, int v) // COMMON
   }
 }
 
-float mapf(float x, float in_min, float in_max, float out_min, float out_max) {
+float mapf(float x, float in_min, float in_max, float out_min, float out_max)
+{
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
@@ -288,7 +272,7 @@ void setup() //common
   {
     // ініціалізація матриць
     matrix.shutdown(i, false);
-    matrix.setIntensity(i, 5);
+    matrix.setIntensity(i, intensity);
     matrix.clearDisplay(i);
   }
 
@@ -306,9 +290,8 @@ void setup() //common
   }
   else if (MODE == 1) // snake
   {
-    initialize(); 
+    initialize();
   }
-    
 }
 
 void loop() //common
@@ -329,7 +312,7 @@ void loop() //common
   }
   else if (MODE == 1)
   {
-    generateFood();    // if there is no food, generate one
+    generateFood(); // if there is no food, generate one
 
     while (millis() < 80 + time)
     {
@@ -560,74 +543,105 @@ void draw() // pong
 /// SNAKE
 ////////////////
 
-void generateFood() {
-  if (food.row == -1 || food.col == -1) {
+void generateFood()
+{
+  if (food.row == -1 || food.col == -1)
+  {
     // self-explanatory
-    if (snake1Length >= 64) {
+    if (snake1Length >= 64)
+    {
       win1 = true;
-      return; // prevent the food generator from running, in this case it would run forever, because it will not be able to find a pixel without a snake
+      return;
+      // prevent the food generator from running, in this case it would run forever, because it will not be able to find a pixel without a snake
     }
-    if (snake2Length >= 64) {
+    if (snake2Length >= 64)
+    {
       win2 = true;
-      return; // prevent the food generator from running, in this case it would run forever, because it will not be able to find a pixel without a snake
+      return;
+      // prevent the food generator from running, in this case it would run forever, because it will not be able to find a pixel without a snake
     }
 
     // generate food until it is in the right position
-    do {
+    do
+    {
       food.col = random(COL_NUM);
       food.row = random(ROW_NUM);
-    } while (gameboard[food.row][food.col] > 0 || (food.row < 8 && (food.col < 8 || food.col > 15)) || (food.row > 15 && (food.col < 8 || food.col > 15)));
+    }
+    while (gameboard[food.row][food.col] > 0 || (food.row < 8 && (food.col < 8 || food.col > 15)) || (food.row > 15
+      && (food.col < 8 || food.col > 15)));
   }
 }
 
 // causes the snake to appear on the other side of the screen if it gets out of the edge
 
-void fixEdge() {
-  if (snake1.col < 8){ // ліва част
-    if (snake1.row < 8){ // I сектор
-      if (snake1Direction == up){
+void fixEdge()
+{
+  if (snake1.col < 8)
+  {
+    // ліва част
+    if (snake1.row < 8)
+    {
+      // I сектор
+      if (snake1Direction == up)
+      {
         snake1.row = snake1.col;
         snake1.col = 8;
         snake1Direction = right;
-      } else {
+      }
+      else
+      {
         snake1.col = snake1.row;
         snake1.row = 8;
         snake1Direction = down;
       }
     }
-    else if (snake1.row > 15){ // II сектор
-      if (snake1Direction == down){
+    else if (snake1.row > 15)
+    {
+      // II сектор
+      if (snake1Direction == down)
+      {
         snake1.row = 23 - snake1.col;
         snake1.col = 8;
         snake1Direction = right;
       }
-      else {
+      else
+      {
         snake1.col = 23 - snake1.row;
         snake1.row = 15;
         snake1Direction = up;
       }
     }
   }
-  else if (snake1.col > 15){ // права част
-    if (snake1.row < 8){ // III сектор
-      if (snake1Direction == right){
+  else if (snake1.col > 15)
+  {
+    // права част
+    if (snake1.row < 8)
+    {
+      // III сектор
+      if (snake1Direction == right)
+      {
         snake1.col = 23 - snake1.row;
         snake1.row = 8;
         snake1Direction = down;
       }
-      else {
+      else
+      {
         snake1.row = 23 - snake1.col;
         snake1.col = 15;
         snake1Direction = left;
       }
     }
-    else if (snake1.row > 15){ // IV сектор
-      if (snake1Direction == down){
+    else if (snake1.row > 15)
+    {
+      // IV сектор
+      if (snake1Direction == down)
+      {
         snake1.row = snake1.col;
         snake1.col = 15;
         snake1Direction = left;
       }
-      else {
+      else
+      {
         snake1.col = snake1.row;
         snake1.row = 15;
         snake1Direction = up;
@@ -635,51 +649,72 @@ void fixEdge() {
     }
   }
 
-  if (snake2.col < 8){ // ліва част
-    if (snake2.row < 8){ // I сектор
-      if (snake2Direction == up){
+  if (snake2.col < 8)
+  {
+    // ліва част
+    if (snake2.row < 8)
+    {
+      // I сектор
+      if (snake2Direction == up)
+      {
         snake2.row = snake2.col;
         snake2.col = 8;
         snake2Direction = right;
-      } else {
+      }
+      else
+      {
         snake2.col = snake2.row;
         snake2.row = 8;
         snake2Direction = down;
       }
     }
-    else if (snake2.row > 15){ // II сектор
-      if (snake2Direction == down){
+    else if (snake2.row > 15)
+    {
+      // II сектор
+      if (snake2Direction == down)
+      {
         snake2.row = 23 - snake2.col;
         snake2.col = 8;
         snake2Direction = right;
       }
-      else {
+      else
+      {
         snake2.col = 23 - snake2.row;
         snake2.row = 15;
         snake2Direction = up;
       }
     }
   }
-  else if (snake2.col > 15){ // права част
-    if (snake2.row < 8){ // III сектор
-      if (snake2Direction == right){
+  else if (snake2.col > 15)
+  {
+    // права част
+    if (snake2.row < 8)
+    {
+      // III сектор
+      if (snake2Direction == right)
+      {
         snake2.col = 23 - snake2.row;
         snake2.row = 8;
         snake2Direction = down;
       }
-      else {
+      else
+      {
         snake2.row = 23 - snake2.col;
         snake2.col = 15;
         snake2Direction = left;
       }
     }
-    else if (snake2.row > 15){ // IV сектор
-      if (snake2Direction == down){
+    else if (snake2.row > 15)
+    {
+      // IV сектор
+      if (snake2Direction == down)
+      {
         snake2.row = snake2.col;
         snake2.col = 15;
         snake2Direction = left;
       }
-      else {
+      else
+      {
         snake2.col = snake2.row;
         snake2.row = 15;
         snake2Direction = up;
@@ -687,8 +722,8 @@ void fixEdge() {
     }
   }
 
-////////////////////
- 
+  ////////////////////
+
   snake1.col < 0 ? snake1.col += COL_NUM : 0;
   snake1.col > COL_NUM - 1 ? snake1.col -= COL_NUM : 0;
   snake1.row < 0 ? snake1.row += ROW_NUM : 0;
@@ -700,93 +735,95 @@ void fixEdge() {
   snake2.row > ROW_NUM - 1 ? snake2.row -= ROW_NUM : 0;
 }
 
-void initialize() {
-  for (int i = 0; i < MATRIX_NUM; i++){
-    matrix.shutdown(i, false);
-    matrix.setIntensity(i, intensity);
-    matrix.clearDisplay(i);
-  }
-  
-  randomSeed(analogRead(A5));
+void initialize()
+{
   snake1.row = 3;
   snake1.col = 11;
 
   snake2.row = 20;
-  snake2.col = 11;   
+  snake2.col = 11;
 }
 
-void calculateSnake() {
-  switch (snake1Direction) {
-    case up:
-      snake1.row--;
-      fixEdge();
-      setLEDM(snake1.row, snake1.col, 1);
-      break;
+void calculateSnake()
+{
+  switch (snake1Direction)
+  {
+  case up:
+    snake1.row--;
+    fixEdge();
+    setLEDM(snake1.row, snake1.col, 1);
+    break;
 
-    case right:
-      snake1.col++;
-      fixEdge();
-      setLEDM(snake1.row, snake1.col, 1);
-      break;
+  case right:
+    snake1.col++;
+    fixEdge();
+    setLEDM(snake1.row, snake1.col, 1);
+    break;
 
-    case down:
-      snake1.row++;
-      fixEdge();
-      setLEDM(snake1.row, snake1.col, 1);
-      break;
+  case down:
+    snake1.row++;
+    fixEdge();
+    setLEDM(snake1.row, snake1.col, 1);
+    break;
 
-    case left:
-      snake1.col--;
-      fixEdge();
-      setLEDM(snake1.row, snake1.col, 1);
-      break;
+  case left:
+    snake1.col--;
+    fixEdge();
+    setLEDM(snake1.row, snake1.col, 1);
+    break;
 
-    default: // if the snake is not moving, exit
-      return;
+  default: // if the snake is not moving, exit
+    return;
   }
 
   // if there is a snake body segment, this will cause the end of the game (snake must be moving)
-  if ((gameboard[snake1.row][snake1.col] > 1  || (snake1.row == snake2.row && snake1.col == snake2.col))&& snake1Direction != 0) {
+  if ((gameboard[snake1.row][snake1.col] > 1 || (snake1.row == snake2.row && snake1.col == snake2.col)) &&
+    snake1Direction != 0)
+  {
     gameOver1 = true;
     return;
   }
 
-  switch (snake2Direction) {
-    case up:
-      snake2.row--;
-      fixEdge();
-      setLEDM(snake2.row, snake2.col, 1);
-      break;
+  switch (snake2Direction)
+  {
+  case up:
+    snake2.row--;
+    fixEdge();
+    setLEDM(snake2.row, snake2.col, 1);
+    break;
 
-    case right:
-      snake2.col++;
-      fixEdge();
-      setLEDM(snake2.row, snake2.col, 1);
-      break;
+  case right:
+    snake2.col++;
+    fixEdge();
+    setLEDM(snake2.row, snake2.col, 1);
+    break;
 
-    case down:
-      snake2.row++;
-      fixEdge();
-      setLEDM(snake2.row, snake2.col, 1);
-      break;
+  case down:
+    snake2.row++;
+    fixEdge();
+    setLEDM(snake2.row, snake2.col, 1);
+    break;
 
-    case left:
-      snake2.col--;
-      fixEdge();
-      setLEDM(snake2.row, snake2.col, 1);
-      break;
+  case left:
+    snake2.col--;
+    fixEdge();
+    setLEDM(snake2.row, snake2.col, 1);
+    break;
 
-    default: // if the snake is not moving, exit
-      return;
+  default: // if the snake is not moving, exit
+    return;
   }
 
-  if ((gameboard[snake2.row][snake2.col] > 1 || (snake1.row == snake2.row && snake1.col == snake2.col)) && snake2Direction != 0) {
+  if ((gameboard[snake2.row][snake2.col] > 1 || (snake1.row == snake2.row && snake1.col == snake2.col)) &&
+    snake2Direction != 0)
+  {
     gameOver2 = true;
     return;
   }
 
   // check if the food was eaten
-  if (snake1.row == food.row && snake1.col == food.col) {
+  if (snake1.row == food.row && snake1.col == food.col)
+  {
     food.row = -1; // reset food
     food.col = -1;
 
@@ -794,7 +831,8 @@ void calculateSnake() {
     snake1Length++;
   }
 
-  if (snake2.row == food.row && snake2.col == food.col) {
+  if (snake2.row == food.row && snake2.col == food.col)
+  {
     food.row = -1; // reset food
     food.col = -1;
 
@@ -807,10 +845,13 @@ void calculateSnake() {
   gameboard[snake2.row][snake2.col] = snake2Length + 1; // will be decremented in a moment
 
   // decrement all the snake body segments, if segment is 0, turn the corresponding led off
-  for (int row = 0; row < ROW_NUM; row++) {
-    for (int col = 0; col < COL_NUM; col++) {
+  for (int row = 0; row < ROW_NUM; row++)
+  {
+    for (int col = 0; col < COL_NUM; col++)
+    {
       // if there is a body segment, decrement it's value
-      if (gameboard[row][col] > 0 ) {
+      if (gameboard[row][col] > 0)
+      {
         gameboard[row][col]--;
       }
 
@@ -820,16 +861,20 @@ void calculateSnake() {
   }
 }
 
-void handleGameStates() {
-  if (gameOver1 || win1 || gameOver2 || win2) {
+void handleGameStates()
+{
+  if (gameOver1 || win1 || gameOver2 || win2)
+  {
     unrollSnake();
     int score = 0;
 
-    if (gameOver1 || win2){
+    if (gameOver1 || win2)
+    {
       second_win();
       score = snake2Length - initialSnakeLength;
     }
-    else if (gameOver2 || win1){
+    else if (gameOver2 || win1)
+    {
       first_win();
       score = snake1Length - initialSnakeLength;
     }
@@ -841,14 +886,16 @@ void handleGameStates() {
     gameOver1 = false;
     win2 = false;
     gameOver2 = false;
-    
+
     snake1.row = 3;
     snake1.col = 11;
 
-    do {
+    do
+    {
       snake2.row = 20;
       snake2.col = 11;
-    } while (snake1.col == snake2.col && snake1.row == snake2.row);
+    }
+    while (snake1.col == snake2.col && snake1.row == snake2.row);
 
     food.row = -1;
     food.col = -1;
@@ -857,10 +904,11 @@ void handleGameStates() {
 
     snake2Length = initialSnakeLength;
     snake2Direction = 0;
-    
+
     memset(gameboard, 0, sizeof(gameboard[0][0]) * COL_NUM * ROW_NUM);
-    
-    for (int i = 0; i < MATRIX_NUM; i++){
+
+    for (int i = 0; i < MATRIX_NUM; i++)
+    {
       matrix.clearDisplay(i);
     }
   }
@@ -1061,27 +1109,55 @@ const PROGMEM bool second_winMSG[8][97] = {
 };
 
 const PROGMEM bool scoreMessage[8][66] = {
-  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+  {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  },
+  {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1,
+    0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  },
+  {
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1,
+    1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  },
+  {
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1,
+    1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  },
+  {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1,
+    0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  },
+  {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0,
+    0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  },
+  {
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1,
+    0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  },
+  {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1,
+    1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  }
 };
 
-void unrollSnake() {
+void unrollSnake()
+{
   // switch off the food LED
   setLEDM(food.row, food.col, 0);
 
   delay(800);
 
   // flash the screen 5 times
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++)
+  {
     // invert the screen
-    for (int row = 0; row < ROW_NUM; row++) {
-      for (int col = 0; col < COL_NUM; col++) {
+    for (int row = 0; row < ROW_NUM; row++)
+    {
+      for (int col = 0; col < COL_NUM; col++)
+      {
         setLEDM(row, col, gameboard[row][col] == 0 ? 1 : 0);
       }
     }
@@ -1089,23 +1165,28 @@ void unrollSnake() {
     delay(20);
 
     // invert it back
-    for (int row = 0; row < ROW_NUM; row++) {
-      for (int col = 0; col < COL_NUM; col++) {
+    for (int row = 0; row < ROW_NUM; row++)
+    {
+      for (int col = 0; col < COL_NUM; col++)
+      {
         setLEDM(row, col, gameboard[row][col] == 0 ? 0 : 1);
       }
     }
 
     delay(50);
-
   }
 
 
   delay(600);
 
-  for (int i = 1; i <= snake1Length + snake2Length; i++) {
-    for (int row = 0; row < ROW_NUM; row++) {
-      for (int col = 0; col < COL_NUM; col++) {
-        if (gameboard[row][col] == i) {
+  for (int i = 1; i <= snake1Length + snake2Length; i++)
+  {
+    for (int row = 0; row < ROW_NUM; row++)
+    {
+      for (int col = 0; col < COL_NUM; col++)
+      {
+        if (gameboard[row][col] == i)
+        {
           setLEDM(row, col, 0);
           delay(100);
         }
@@ -1131,14 +1212,14 @@ void first_win() // common
       }
 
       // if the joystick is moved, exit the message
-      if (analogRead(Pin::joystickY1) < joystickHome1.y - joystickThreshold
-        || analogRead(Pin::joystickY1) > joystickHome1.y + joystickThreshold
-        || analogRead(Pin::joystickX1) < joystickHome1.x - joystickThreshold
-        || analogRead(Pin::joystickX1) > joystickHome1.x + joystickThreshold
-        || analogRead(Pin::joystickY2) < joystickHome2.y - joystickThreshold
-        || analogRead(Pin::joystickY2) > joystickHome2.y + joystickThreshold
-        || analogRead(Pin::joystickX2) < joystickHome2.x - joystickThreshold
-        || analogRead(Pin::joystickX2) > joystickHome2.x + joystickThreshold)
+      if (analogRead(Pin::joystickY1) < joystickHome1.col - joystickThreshold
+        || analogRead(Pin::joystickY1) > joystickHome1.col + joystickThreshold
+        || analogRead(Pin::joystickX1) < joystickHome1.row - joystickThreshold
+        || analogRead(Pin::joystickX1) > joystickHome1.row + joystickThreshold
+        || analogRead(Pin::joystickY2) < joystickHome2.col - joystickThreshold
+        || analogRead(Pin::joystickY2) > joystickHome2.col + joystickThreshold
+        || analogRead(Pin::joystickX2) < joystickHome2.row - joystickThreshold
+        || analogRead(Pin::joystickX2) > joystickHome2.row + joystickThreshold)
       {
         return; // return the lambda function
       }
@@ -1171,14 +1252,14 @@ void second_win() // common
       }
 
       // if the joystick is moved, exit the message
-      if (analogRead(Pin::joystickY1) < joystickHome1.y - joystickThreshold
-        || analogRead(Pin::joystickY1) > joystickHome1.y + joystickThreshold
-        || analogRead(Pin::joystickX1) < joystickHome1.x - joystickThreshold
-        || analogRead(Pin::joystickX1) > joystickHome1.x + joystickThreshold
-        || analogRead(Pin::joystickY2) < joystickHome2.y - joystickThreshold
-        || analogRead(Pin::joystickY2) > joystickHome2.y + joystickThreshold
-        || analogRead(Pin::joystickX2) < joystickHome2.x - joystickThreshold
-        || analogRead(Pin::joystickX2) > joystickHome2.x + joystickThreshold)
+      if (analogRead(Pin::joystickY1) < joystickHome1.col - joystickThreshold
+        || analogRead(Pin::joystickY1) > joystickHome1.col + joystickThreshold
+        || analogRead(Pin::joystickX1) < joystickHome1.row - joystickThreshold
+        || analogRead(Pin::joystickX1) > joystickHome1.row + joystickThreshold
+        || analogRead(Pin::joystickY2) < joystickHome2.col - joystickThreshold
+        || analogRead(Pin::joystickY2) > joystickHome2.col + joystickThreshold
+        || analogRead(Pin::joystickX2) < joystickHome2.row - joystickThreshold
+        || analogRead(Pin::joystickX2) > joystickHome2.row + joystickThreshold)
       {
         return; // return the lambda function
       }
@@ -1196,14 +1277,14 @@ void second_win() // common
 
 void waitJoystic() // common
 {
-  while (analogRead(Pin::joystickY1) < joystickHome1.y - joystickThreshold
-    || analogRead(Pin::joystickY1) > joystickHome1.y + joystickThreshold
-    || analogRead(Pin::joystickX1) < joystickHome1.x - joystickThreshold
-    || analogRead(Pin::joystickX1) > joystickHome1.x + joystickThreshold
-    || analogRead(Pin::joystickY2) < joystickHome2.y - joystickThreshold
-    || analogRead(Pin::joystickY2) > joystickHome2.y + joystickThreshold
-    || analogRead(Pin::joystickX2) < joystickHome2.x - joystickThreshold
-    || analogRead(Pin::joystickX2) > joystickHome2.x + joystickThreshold)
+  while (analogRead(Pin::joystickY1) < joystickHome1.col - joystickThreshold
+    || analogRead(Pin::joystickY1) > joystickHome1.col + joystickThreshold
+    || analogRead(Pin::joystickX1) < joystickHome1.row - joystickThreshold
+    || analogRead(Pin::joystickX1) > joystickHome1.row + joystickThreshold
+    || analogRead(Pin::joystickY2) < joystickHome2.col - joystickThreshold
+    || analogRead(Pin::joystickY2) > joystickHome2.col + joystickThreshold
+    || analogRead(Pin::joystickX2) < joystickHome2.row - joystickThreshold
+    || analogRead(Pin::joystickX2) > joystickHome2.row + joystickThreshold)
   {
   }
 }
@@ -1223,19 +1304,25 @@ void updateScore() // pong
     restartGame();
 }
 
-void showScoreMessage(int score) {
+void showScoreMessage(int score)
+{
   if (score < 0 || score > 99) return;
 
   // specify score digits
   int second = score % 10;
   int first = (score / 10) % 10;
 
-  [&] {
-    for (int d = 0; d < sizeof(scoreMessage[0]) + 2 * sizeof(digits[0][0]); d++) {
-      for (int col = 0; col < COL_NUM; col++) {
+  [&]
+  {
+    for (int d = 0; d < sizeof(scoreMessage[0]) + 2 * sizeof(digits[0][0]); d++)
+    {
+      for (int col = 0; col < COL_NUM; col++)
+      {
         delay(messageSpeed);
-        for (int row = 0; row < 8; row++) {
-          if (d <= sizeof(scoreMessage[0]) - 8) {
+        for (int row = 0; row < 8; row++)
+        {
+          if (d <= sizeof(scoreMessage[0]) - 8)
+          {
             setLEDM(row + 8, col, pgm_read_byte(&(scoreMessage[row][col + d])));
           }
 
@@ -1244,11 +1331,16 @@ void showScoreMessage(int score) {
           // if the score is < 10, shift out the first digit (zero)
           if (score < 10) c += 8;
 
-          if (c >= 0 && c < 8) {
-            if (first > 0) setLEDM(row + 8, col, pgm_read_byte(&(digits[first][row][c]))); // show only if score is >= 10 (see above)
-          } else {
+          if (c >= 0 && c < 8)
+          {
+            if (first > 0) setLEDM(row + 8, col, pgm_read_byte(&(digits[first][row][c])));
+            // show only if score is >= 10 (see above)
+          }
+          else
+          {
             c -= 8;
-            if (c >= 0 && c < 8) {
+            if (c >= 0 && c < 8)
+            {
               setLEDM(row + 8, col, pgm_read_byte(&(digits[second][row][c]))); // show always
             }
           }
@@ -1256,20 +1348,22 @@ void showScoreMessage(int score) {
       }
 
       // if the joystick is moved, exit the message
-      if (analogRead(Pin::joystickY1) < joystickHome1.y - joystickThreshold
-              || analogRead(Pin::joystickY1) > joystickHome1.y + joystickThreshold
-              || analogRead(Pin::joystickX1) < joystickHome1.x - joystickThreshold
-              || analogRead(Pin::joystickX1) > joystickHome1.x + joystickThreshold
-              || analogRead(Pin::joystickY2) < joystickHome2.y - joystickThreshold
-              || analogRead(Pin::joystickY2) > joystickHome2.y + joystickThreshold
-              || analogRead(Pin::joystickX2) < joystickHome2.x - joystickThreshold
-              || analogRead(Pin::joystickX2) > joystickHome2.x + joystickThreshold) {
+      if (analogRead(Pin::joystickY1) < joystickHome1.col - joystickThreshold
+        || analogRead(Pin::joystickY1) > joystickHome1.col + joystickThreshold
+        || analogRead(Pin::joystickX1) < joystickHome1.row - joystickThreshold
+        || analogRead(Pin::joystickX1) > joystickHome1.row + joystickThreshold
+        || analogRead(Pin::joystickY2) < joystickHome2.col - joystickThreshold
+        || analogRead(Pin::joystickY2) > joystickHome2.col + joystickThreshold
+        || analogRead(Pin::joystickX2) < joystickHome2.row - joystickThreshold
+        || analogRead(Pin::joystickX2) > joystickHome2.row + joystickThreshold)
+      {
         return; // return the lambda function
       }
     }
   }();
 
-  for (int i = 0; i < MATRIX_NUM; i++){
+  for (int i = 0; i < MATRIX_NUM; i++)
+  {
     matrix.clearDisplay(i);
   }
 }
