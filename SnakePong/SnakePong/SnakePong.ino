@@ -1,8 +1,38 @@
 #include "LedControl.h"
 
+#define MATRIX_NUM 5
 #define ROW_NUM 24
 #define COL_NUM 24
 
+struct Coordinate {
+  int x = 0, y = 0;
+  Coordinate(int x = 0, int y = 0): x(x), y(y) {}
+};
+
+struct Pin {
+  static const short joystickX1 = A2;   // joystick X axis pin for player 1
+  static const short joystickY1 = A3;   // joystick Y axis pin for player 1
+
+  static const short joystickX2 = A0;   // joystick X axis pin for player 1
+  static const short joystickY2 = A1;   // joystick Y axis pin for player 1
+
+  static const short potentiometer = A7; // potentiometer for snake speed control
+
+  static const short CLK = 10;   // clock for LED matrix
+  static const short CS  = 11;  // chip-select for LED matrix
+  static const short DIN = 12; // data-in for LED matrix
+};
+
+// construct with default values in case the user turns off the calibration
+Coordinate joystickHome1(500, 500);
+Coordinate joystickHome2(500, 500);
+
+// threshold where movement of the joystick will be accepted
+const int joystickThreshold = 160;
+
+LedControl matrix(Pin::DIN, Pin::CLK, Pin::CS, 5);
+
+////////// --------Pong----------//////
 unsigned long lastRefreshTime = 0;
 int refreshInterval = 1;
 unsigned long lastMoveTime = 0;
@@ -49,33 +79,11 @@ int shape[24][8] = { // ігрове поле
   {0, 0, 0, 0, 0, 0, 0, 0}
 };
 
-struct Pin {
-  static const short joystickX1 = A2;   // joystick X axis pin for player 1
-  static const short joystickY1 = A3;   // joystick Y axis pin for player 1
+///// ------ snake --------------/////
 
-  static const short joystickX2 = A0;   // joystick X axis pin for player 1
-  static const short joystickY2 = A1;   // joystick Y axis pin for player 1
 
-  static const short potentiometer = A7; // potentiometer for snake speed control
 
-  static const short CLK = 10;   // clock for LED matrix
-  static const short CS  = 11;  // chip-select for LED matrix
-  static const short DIN = 12; // data-in for LED matrix
-};
-
-struct Coordinate {
-  int x = 0, y = 0;
-  Coordinate(int x = 0, int y = 0): x(x), y(y) {}
-};
-
-// construct with default values in case the user turns off the calibration
-Coordinate joystickHome1(500, 500);
-Coordinate joystickHome2(500, 500);
-
-// threshold where movement of the joystick will be accepted
-const int joystickThreshold = 160;
-
-LedControl matrix(Pin::DIN, Pin::CLK, Pin::CS, 5);
+//// common
 
 void calibrateJoystick() {
   Coordinate values;
@@ -123,6 +131,28 @@ void scanJoystick() { // Обробка джойстиків
   }
 }
 
+void setLEDM(int row, int col, int v) {
+  if (row > 7 && row < 16) { // центральний ряд матриць
+    if (col < 8 && col >= 0) {
+      matrix.setLed(3, row - 8, col, v);
+    }
+    else if (col >= 8 && col < 16) {
+      matrix.setLed(2, row - 8, col - 8, v);
+    }
+    else if (col >= 16 && col < 24) {
+      matrix.setLed(1, row - 8, col - 16, v);
+    }
+  }
+  else if (row > 15) { // нижня матриця
+    matrix.setLed(0, row - 16, col - 8, v);
+  }
+  else { // верхня матриця
+    matrix.setLed(4, row, col - 8, v);
+  }
+}
+
+//// main
+
 void setup() {
   for (int i = 0; i < 5; i++) { // ініціалізація матриць
     matrix.shutdown(i, false);
@@ -147,6 +177,10 @@ void loop() {
   }
   draw();
 }
+
+
+
+////////------- Pong ----/////
 
 void gameOver() {
   isGameOn = false;
@@ -222,14 +256,14 @@ void updateBall() {
 
   if (ballMovingUp)
   {
-    if (ballY > 5)
+    if (ballY > 5 && ballY < 18)
       ballY -= random(2) + 1;
     else
       ballY--;
   }
   else
   {
-    if (ballY < 18)
+    if (ballY > 5 && ballY < 18)
       ballY += random(2) + 1;
     else
       ballY++;
@@ -247,7 +281,7 @@ void updateBall() {
 
   if (ballY == 1 && ballX >= player2Position && ballX < player2Position + 3) {
     if (ballX > 2 && ballX < 6)
-      ballX += 2 - random(3);
+      ballX ++;
 
     ballMovingUp = false;
     moveInterval -= 20;
@@ -255,7 +289,7 @@ void updateBall() {
   }
   else if (ballY == 22 && ballX >= player1Position && ballX < player1Position + 3) {
     if (ballX > 2 && ballX < 6)
-      ballX += random(3) - 2;
+      ballX ++;
 
     ballMovingUp = true;
     moveInterval -= 20;
@@ -264,7 +298,7 @@ void updateBall() {
 }
 
 void buzz() {
-  tone(speakerPin, 300, 20);
+  //tone(speakerPin, 300, 20);
 }
 
 void update() {
@@ -292,26 +326,6 @@ void update() {
     shape[ballY][ballX] = 1; // відобразити м'яч
     
     lastMoveTime = now;
-  }
-}
-
-void setLEDM(int row, int col, int v) {
-  if (row > 7 && row < 16) { // центральний ряд матриць
-    if (col < 8 && col >= 0) {
-      matrix.setLed(3, row - 8, col, v);
-    }
-    else if (col >= 8 && col < 16) {
-      matrix.setLed(2, row - 8, col - 8, v);
-    }
-    else if (col >= 16 && col < 24) {
-      matrix.setLed(1, row - 8, col - 16, v);
-    }
-  }
-  else if (row > 15) { // нижня матриця
-    matrix.setLed(0, row - 16, col - 8, v);
-  }
-  else { // верхня матриця
-    matrix.setLed(4, row, col - 8, v);
   }
 }
 
