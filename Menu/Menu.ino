@@ -17,9 +17,11 @@ struct Pin
 {
   static const short joystickY1 = A2; // joystick X axis pin for player 1
   static const short joystickX1 = A3; // joystick Y axis pin for player 1
+  static const short joystick1but = 3; // joystick button pin for player 1
 
   static const short joystickY2 = A0; // joystick X axis pin for player 1
   static const short joystickX2 = A1; // joystick Y axis pin for player 1
+  static const short joystick1but = 2; // joystick button pin for player 2
 
   //static const short potentiometer = A7; // potentiometer for snake speed control
 
@@ -398,7 +400,10 @@ void setup() //common
     matrix.clearDisplay(i);
   }
 
-  Serial.begin(115200);
+  pinMode(joystick1but, INPUT);
+  pinMode(joystick2but, INPUT);
+
+  //Serial.begin(115200);
 
   calibrateJoystick();
 
