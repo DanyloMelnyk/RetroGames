@@ -4,7 +4,7 @@
 #define ROW_NUM 24
 #define COL_NUM 24
 
-int MODE = 1; // 0 - menu, 1 - snake, 2 - pong
+int MODE = 2; // 0 - menu, 1 - snake, 2 - pong
 
 struct Point
 {
@@ -15,11 +15,11 @@ struct Point
 
 struct Pin
 {
-  static const short joystickX1 = A2; // joystick X axis pin for player 1
-  static const short joystickY1 = A3; // joystick Y axis pin for player 1
+  static const short joystickY1 = A2; // joystick X axis pin for player 1
+  static const short joystickX1 = A3; // joystick Y axis pin for player 1
 
-  static const short joystickX2 = A0; // joystick X axis pin for player 1
-  static const short joystickY2 = A1; // joystick Y axis pin for player 1
+  static const short joystickY2 = A0; // joystick X axis pin for player 1
+  static const short joystickX2 = A1; // joystick Y axis pin for player 1
 
   static const short potentiometer = A7; // potentiometer for snake speed control
 
@@ -101,6 +101,8 @@ bool gameOver1 = false;
 bool win2 = false;
 bool gameOver2 = false;
 
+int move;
+
 // primary snake head coordinates (snake head), it will be randomly generated
 Point snake1;
 Point snake2;
@@ -111,7 +113,7 @@ Point food(-1, -1);
 // snake parameters
 int snake1Length = initialSnakeLength; // choosed by the user in the config section for player 1
 int snake2Length = initialSnakeLength; // choosed by the user in the config section for player 2
-int snakeSpeed = 1; // will be set according to potentiometer value, cannot be 0
+//int snakeSpeed = 1; // will be set according to potentiometer value, cannot be 0
 int snake1Direction = 0; // if it is 0, the snake does not move
 int snake2Direction = 0; // if it is 0, the snake does not move
 
@@ -158,7 +160,7 @@ void scanJoystick()
   int Y1 = analogRead(Pin::joystickY1);
   int Y2 = analogRead(Pin::joystickY2);
 
-  if (MODE == 2)
+  if (MODE == 2) // Pong
   {
     if (Y1 < joystickHome1.col - joystickThreshold && player1Position > 0) // down
     {
@@ -178,7 +180,7 @@ void scanJoystick()
       player2Position--;
     }
   }
-  else if (MODE == 1)
+  else if (MODE == 1) // Snake
   {
    
 
@@ -186,7 +188,8 @@ void scanJoystick()
     int previousDirection2 = snake2Direction; // save the last direction
     long timestamp = millis();
 
-    while (millis() < timestamp + snakeSpeed)
+    //while (millis() < timestamp + snakeSpeed)
+    while (millis() < timestamp + moveInterval)
     {
       int X1 = analogRead(Pin::joystickX1);
       int X2 = analogRead(Pin::joystickX2);
@@ -195,15 +198,15 @@ void scanJoystick()
       int Y2 = analogRead(Pin::joystickY2);
   
       // calculate snake speed exponentially (10...1000ms)
-      float raw = mapf(analogRead(Pin::potentiometer), 0, 1023, 0, 1);
-      snakeSpeed = mapf(pow(raw, 3.5), 0, 1, 10, 1000); // change the speed exponentially
-      if (snakeSpeed == 0) snakeSpeed = 1; // safety: speed can not be 0
+      //float raw = mapf(analogRead(Pin::potentiometer), 0, 1023, 0, 1);
+      //snakeSpeed = mapf(pow(raw, 3.5), 0, 1, 10, 1000); // change the speed exponentially
+      //if (snakeSpeed == 0) snakeSpeed = 1; // safety: speed can not be 0
 
       // determine the direction of the snake
-      Y1 < joystickHome1.col - joystickThreshold ? snake1Direction = down : 0; //up    : 0;
-      Y1 > joystickHome1.col + joystickThreshold ? snake1Direction = up : 0; //down  : 0;
-      X1 < joystickHome1.row - joystickThreshold ? snake1Direction = left : 0;
-      X1 > joystickHome1.row + joystickThreshold ? snake1Direction = right : 0;
+      Y1 < joystickHome1.col - joystickThreshold ? snake1Direction = up    : 0;
+      Y1 > joystickHome1.col + joystickThreshold ? snake1Direction = down  : 0;
+      X1 < joystickHome1.row - joystickThreshold ? snake1Direction = right : 0;//left : 0;
+      X1 > joystickHome1.row + joystickThreshold ? snake1Direction = left : 0;//right : 0;
 
       // ignore directional change by 180 degrees (no effect for non-moving snake)
       snake1Direction + 2 == previousDirection1 && previousDirection1 != 0
@@ -213,10 +216,10 @@ void scanJoystick()
         ? snake1Direction = previousDirection1
         : 0;
 
-      Y2 < joystickHome2.col - joystickThreshold ? snake2Direction = down : 0; //up    : 0;
-      Y2 > joystickHome2.col + joystickThreshold ? snake2Direction = up : 0; //down  : 0;
-      X2 < joystickHome2.row - joystickThreshold ? snake2Direction = left : 0;
-      X2 > joystickHome2.row + joystickThreshold ? snake2Direction = right : 0;
+      Y2 < joystickHome2.col - joystickThreshold ? snake2Direction = up    : 0;
+      Y2 > joystickHome2.col + joystickThreshold ? snake2Direction = down  : 0;
+      X2 < joystickHome2.row - joystickThreshold ? snake2Direction = right : 0;//left : 0;
+      X2 > joystickHome2.row + joystickThreshold ? snake2Direction = left : 0;//right : 0;
 
       // ignore directional change by 180 degrees (no effect for non-moving snake)
       snake2Direction + 2 == previousDirection2 && previousDirection2 != 0
@@ -343,6 +346,9 @@ void loop() //common
 
     // uncomment this if you want the current game board to be printed to the serial (slows down the game a bit)
     //dumpGameBoard();
+    move++;
+
+    if (move % 20 == 0) moveInterval -= 10;
   }
 }
 
@@ -742,6 +748,8 @@ void initialize()
 
   snake2.row = 20;
   snake2.col = 11;
+
+  moveInterval = 300;
 }
 
 void calculateSnake()
@@ -829,6 +837,7 @@ void calculateSnake()
 
     // increment snake length
     snake1Length++;
+    moveInterval -= 30;
   }
 
   if (snake2.row == food.row && snake2.col == food.col)
@@ -838,6 +847,7 @@ void calculateSnake()
 
     // increment snake length
     snake2Length++;
+    moveInterval -= 30;
   }
 
   // add new segment at the snake head location
