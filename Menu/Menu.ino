@@ -4,7 +4,7 @@
 #define ROW_NUM 24
 #define COL_NUM 24
 
-int MODE = 1; // 0 - menu, 1 - snake, 2 - pong
+int MODE = 0; // 0 - menu, 1 - snake, 2 - pong
 
 struct Point
 {
@@ -21,7 +21,7 @@ struct Pin
 
   static const short joystickY2 = A0; // joystick X axis pin for player 1
   static const short joystickX2 = A1; // joystick Y axis pin for player 1
-  static const short joystick1but = 2; // joystick button pin for player 2
+  static const short joystick2but = 2; // joystick button pin for player 2
 
   //static const short potentiometer = A7; // potentiometer for snake speed control
 
@@ -67,7 +67,7 @@ boolean ballMovingLeft = true; // true - наліво, false - направо
 boolean straight = false; //true - ігнор ліво|право
 boolean isGameOn = true;
 
-int shape[24][8] = {
+bool shape[24][8] = {
   // ігрове поле
   {0, 0, 0, 0, 0, 0, 0, 0},
   {0, 0, 0, 0, 0, 0, 0, 0},
@@ -161,6 +161,20 @@ void scanJoystick()
   // Обробка джойстиків
   int Y1 = analogRead(Pin::joystickY1);
   int Y2 = analogRead(Pin::joystickY2);
+
+  if (digitalRead(Pin::joystick1but) == LOW && digitalRead(Pin::joystick2but) == LOW)
+  {
+    delay(1000);
+
+    do
+    {
+      delay(1);
+    }
+    while (!(digitalRead(Pin::joystick1but) == LOW && digitalRead(Pin::joystick2but) == LOW));
+
+    //setup();
+    //return;
+  }
 
   if (MODE == 2) // Pong
   {
@@ -269,6 +283,8 @@ float mapf(float x, float in_min, float in_max, float out_min, float out_max)
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+
+
 const PROGMEM bool digits[][8][8] = {
   {
     {0, 0, 0, 0, 0, 0, 0, 0},
@@ -371,6 +387,104 @@ const PROGMEM bool digits[][8][8] = {
     {0, 0, 1, 1, 1, 1, 0, 0}
   }
 };
+
+void menu()
+{
+  int choose = 0, m = -1;
+
+  for (int i = 0; i < 5; i++)
+  {
+    matrix.clearDisplay(i);
+  }
+
+  for (int i = 0; i < 8; i++)
+  {
+    for (int j = 0; j < 8; j++)
+    {
+      matrix.setLed(0, i, j, pgm_read_byte(&(digits[1][i][j])));
+      matrix.setLed(1, i, j, pgm_read_byte(&(digits[2][i][j])));
+      matrix.setLed(2, i, j, pgm_read_byte(&(digits[0][i][j])));
+      matrix.setLed(3, i, j, pgm_read_byte(&(digits[3][i][j])));
+      matrix.setLed(4, i, j, pgm_read_byte(&(digits[4][i][j])));
+    }
+  }
+
+  do
+  {
+    int X1 = analogRead(Pin::joystickX1);
+    int Y1 = analogRead(Pin::joystickY1);
+    int X2 = analogRead(Pin::joystickX2);
+    int Y2 = analogRead(Pin::joystickY2);
+
+    if (Y1 < joystickHome1.col - joystickThreshold || Y2 < joystickHome2.col - joystickThreshold) // up
+    {
+      choose = 4;
+      m = 4;
+    }
+    else if (Y1 > joystickHome1.col + joystickThreshold || Y2 > joystickHome2.col + joystickThreshold) // down
+    {
+      choose = 1;
+      m = 0;
+    }
+    else if (X1 < joystickHome1.row - joystickThreshold || X2 < joystickHome2.row - joystickThreshold) // right
+    {
+      choose = 2;
+      m = 1;
+    }
+    else if (X1 > joystickHome1.row + joystickThreshold || X2 > joystickHome2.row + joystickThreshold) // left
+    {
+      choose = 3;
+      m = 3;
+    }
+
+  if (m != -1){
+    // invert the screen
+    for (int row = 0; row < 8; row++)
+    {
+      for (int col = 0; col < 8; col++)
+      {
+        matrix.setLed(m, row, col, !pgm_read_byte(&(digits[choose][row][col])));
+      }
+    }
+
+    delay(30);
+
+    // invert it back
+    for (int row = 0; row < 8; row++)
+    {
+      for (int col = 0; col < 8; col++)
+      {
+        matrix.setLed(m, row, col, pgm_read_byte(&(digits[choose][row][col])));
+      }
+    }
+    delay(90);
+  }
+  }
+  while ((digitalRead(Pin::joystick1but) == HIGH && digitalRead(Pin::joystick2but) == HIGH) || choose == 0);
+
+  switch(choose)
+  {
+    case 1: 
+      MODE = 1;
+      one_player = true;
+      break;
+    case 2:
+      MODE = 1;
+      one_player = false;
+      break;
+    case 3:
+      MODE = 2;
+      break;
+    default:
+      MODE = 0;
+  }
+
+  for (int i = 0; i < 5; i++)
+  {
+    matrix.clearDisplay(i);
+  }
+}
+
 void restartGame();
 void initialize();
 void updateScore() // pong
@@ -400,9 +514,11 @@ void setup() //common
     matrix.clearDisplay(i);
   }
 
-  pinMode(joystick1but, INPUT);
-  pinMode(joystick2but, INPUT);
+  pinMode(Pin::joystick1but, INPUT);
+  pinMode(Pin::joystick2but, INPUT);
 
+  digitalWrite(Pin::joystick1but, HIGH);
+  digitalWrite(Pin::joystick2but, HIGH);
   //Serial.begin(115200);
 
   calibrateJoystick();
@@ -410,7 +526,17 @@ void setup() //common
   player1Score = 0;
   player2Score = 0;
 
+  do
+  {
+    menu();
+  } while (MODE == 0);
+  
 
+  for (int i = 0; i < 5; i++)
+  {
+    matrix.clearDisplay(i);
+  }
+  
   if (MODE == 2) // pong
   {
     updateScore();
