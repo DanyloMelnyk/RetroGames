@@ -57,8 +57,12 @@ unsigned long overTime = 100000000;
 
 int ballX;
 int ballY;
+int lastballX;
+int lastballY;
 int player1Score, player2Score;
 int player1Position = 3, player2Position = 3; // позиція 1 пікселя ракетки поч з 8 зліва
+int lastp1Position, lastp2Position; // позиція 1 пікселя ракетки поч з 8 зліва
+
 
 int last_win = 0; // 0 - жоден, 1 - перший, 2 -другий
 
@@ -66,34 +70,6 @@ boolean ballMovingUp = true; // true - рух вверх, false - вниз
 boolean ballMovingLeft = true; // true - наліво, false - направо
 boolean straight = false; //true - ігнор ліво|право
 boolean isGameOn = true;
-
-bool shape[24][8] = {
-  // ігрове поле
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, 0, 0}
-};
 
 ///// ------ snake --------------/////
 
@@ -195,6 +171,8 @@ void scanJoystick()
     {
       player2Position--;
     }
+
+    delay(100);
   }
   else if (MODE == 1) // Snake
   {
@@ -597,23 +575,23 @@ void loop() //common
       while (snake1Direction == 0);
 
       calculateSnake(); // calculates snake parameters
-  handleGameStates();
+      handleGameStates();
 
-  // intelligently blink with the food
-  while (millis() < 100 + time)
-  {
-  }
+      // intelligently blink with the food
+      while (millis() < 100 + time)
+      {
+      }
 
-  setLEDM(food.row, food.col, 0);
+      setLEDM(food.row, food.col, 0);
 
-  time = millis();
+      time = millis();
 
-  // uncomment this if you want the current game board to be printed to the serial (slows down the game a bit)
-  //dumpGameBoard();
-  move++;
+      // uncomment this if you want the current game board to be printed to the serial (slows down the game a bit)
+      //dumpGameBoard();
+      move++;
 
-  if (move % 20 == 0) moveInterval -= 10;
-  }  
+      if (move % 20 == 0) moveInterval -= 10;
+    }
   }
 }
 
@@ -680,6 +658,22 @@ void restartGame() // pong
 
   ballX = now % 8;
   ballMovingLeft = true;
+
+  for (int i = lastp1Position; i < lastp1Position + 3; i++)
+    matrix.setLed(0, 7, i, 0);
+
+  for (int i = player1Position; i < player1Position + 3; i++)
+    matrix.setLed(0, 7, i, 1);
+
+  lastp1Position = player1Position;
+
+  for (int i = lastp2Position; i < lastp2Position + 3; i++)
+    matrix.setLed(4, 0, i, 0);
+
+  for (int i = player2Position; i < player2Position + 3; i++)
+    matrix.setLed(4, 0, i, 1);
+  lastp2Position = player2Position;
+
   isGameOn = true;
 }
 
@@ -746,7 +740,7 @@ void updateBall() // pong
   {
     //if (ballX > 2 && ballX < 6)
     //  ballX ++;
-    ballMovingLeft = !ballMovingLeft;
+    //ballMovingLeft = !ballMovingLeft;
 
 
     ballMovingUp = false;
@@ -758,7 +752,7 @@ void updateBall() // pong
     //if (ballX > 2 && ballX < 6)
     //  ballX ++;
 
-    ballMovingLeft = !ballMovingLeft;
+    //ballMovingLeft = !ballMovingLeft;
 
     ballMovingUp = true;
     moveInterval -= 20;
@@ -769,40 +763,14 @@ void updateBall() // pong
 void update() // pong
 {
   if (now - lastMoveTime > moveInterval)
-  {
-    // очистка поля
-    for (int i = 0; i < 24; i++)
-    {
-      for (int j = 0; j < 8; j++)
-      {
-        shape[i][j] = 0;
-      }
-    }
-
-    for (int i = 0; i < 8; i++)
-    {
-      if (i >= player1Position && i < player1Position + 3)
-      {
-        // відобразити 1 ракетку
-        shape[23][i] = 1;
-      }
-      else
-      {
-        shape[23][i] = 0;
-      }
-      if (i >= player2Position && i < player2Position + 3)
-      {
-        // відобразити 2 ракетку
-        shape[0][i] = 1;
-      }
-      else
-      {
-        shape[0][i] = 0;
-      }
-    }
-
+  {  
     updateBall(); // переміщення м'яча
-    shape[ballY][ballX] = 1; // відобразити м'яч
+    
+    setLEDM(lastballY, lastballX + 8, 0); // знищ. минулої поз м'яча
+    setLEDM(ballY, ballX + 8, 1); // відображення м'яча
+    
+    lastballX = ballX;
+    lastballY = ballY;
 
     lastMoveTime = now;
   }
@@ -810,14 +778,32 @@ void update() // pong
 
 void draw() // pong
 {
+  setLEDM(lastballY, lastballX + 8, 0);
+  setLEDM(ballY, ballX + 8, 1);
+  lastballX = ballX;
+  lastballY = ballY;
+
   if (now - lastRefreshTime >= refreshInterval)
   {
-    for (int i = 0; i < 24; i++)
+    if (lastp1Position != player1Position)
     {
-      for (int j = 0; j < 8; j++)
-      {
-        setLEDM(i, j + 8, shape[i][j] == 1 ? HIGH : LOW);
-      }
+      for (int i = lastp1Position; i < lastp1Position + 3; i++)
+        matrix.setLed(0, 7, i, 0);
+
+      for (int i = player1Position; i < player1Position + 3; i++)
+        matrix.setLed(0, 7, i, 1);
+
+      lastp1Position = player1Position;
+    }
+
+    if (lastp2Position != player2Position)
+    {
+      for (int i = lastp2Position; i < lastp2Position + 3; i++)
+        matrix.setLed(4, 0, i, 0);
+
+      for (int i = player2Position; i < player2Position + 3; i++)
+        matrix.setLed(4, 0, i, 1);
+      lastp2Position = player2Position;
     }
 
     lastRefreshTime = now;
