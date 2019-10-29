@@ -554,7 +554,7 @@ void handleGameStates();
 
 void loop() //common
 {
-  if (MODE == 2)
+  if (MODE == 2) // Pong
   {
     now = millis();
     if (isGameOn)
@@ -568,7 +568,7 @@ void loop() //common
     }
     draw();
   }
-  else if (MODE == 1)
+  else if (MODE == 1) // Snake
   {
     generateFood(); // if there is no food, generate one
 
@@ -581,24 +581,22 @@ void loop() //common
 
     time = millis();
 
-    if (!one_player) {
+    if (!one_player) { // 2 players
       do
       {
         scanJoystick(); // watches joystick movements
       }
       while (snake1Direction == 0 || snake2Direction == 0);
     }
-    else
+    else // 1 player
     {
       do
       {
         scanJoystick(); // watches joystick movements
       }
       while (snake1Direction == 0);
-    }
-  }
 
-  calculateSnake(); // calculates snake parameters
+      calculateSnake(); // calculates snake parameters
   handleGameStates();
 
   // intelligently blink with the food
@@ -615,6 +613,8 @@ void loop() //common
   move++;
 
   if (move % 20 == 0) moveInterval -= 10;
+  }  
+  }
 }
 
 
@@ -704,6 +704,15 @@ void updateBall() // pong
       ballX = 7;
     }
   }
+  else
+  {
+    if (ballMovingUp)
+      ballY--;
+    else
+      ballY++;
+
+    straight = false;
+  }
 
   if (ballMovingUp)
   {
@@ -735,8 +744,10 @@ void updateBall() // pong
 
   if (ballY == 1 && ballX >= player2Position && ballX < player2Position + 3)
   {
-    if (ballX > 2 && ballX < 6)
-      ballX ++;
+    //if (ballX > 2 && ballX < 6)
+    //  ballX ++;
+    ballMovingLeft = !ballMovingLeft;
+
 
     ballMovingUp = false;
     moveInterval -= 20;
@@ -744,8 +755,10 @@ void updateBall() // pong
   }
   else if (ballY == 22 && ballX >= player1Position && ballX < player1Position + 3)
   {
-    if (ballX > 2 && ballX < 6)
-      ballX ++;
+    //if (ballX > 2 && ballX < 6)
+    //  ballX ++;
+
+    ballMovingLeft = !ballMovingLeft;
 
     ballMovingUp = true;
     moveInterval -= 20;
@@ -1030,6 +1043,7 @@ void initialize()
     snake2Direction = -1;
   }
 
+  move = 0;
   moveInterval = 400;
 }
 
