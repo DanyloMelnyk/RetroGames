@@ -312,7 +312,7 @@ void print_score(LedControl* matrix, int score, Joystic j)
 	int second = score % 10;
 	int first = (score / 10) % 10;
 
-	for (int d = 0; d < 66 + 2 * sizeof(digits[0][0]); d++)
+	for (unsigned int d = 0; d < 66 + 2 * sizeof(digits[0][0]); d++)
 	{
 		for (int col = 0; col < 24; col++)
 		{
@@ -355,7 +355,7 @@ void print_score(LedControl* matrix, int score, Joystic j)
 
 void first_win(LedControl* matrix, Joystic j)
 {
-	for (int d = 0; d < sizeof(second_winMSG[0]) - 16; d++)
+	for (unsigned int d = 0; d < sizeof(second_winMSG[0]) - 16; d++)
 	{
 		for (int col = 0; col < 24; col++)
 		{
@@ -376,7 +376,7 @@ void first_win(LedControl* matrix, Joystic j)
 
 void second_win(LedControl* matrix, Joystic j)
 {
-	for (int d = 0; d < sizeof(second_winMSG[0]) - 16; d++)
+	for (unsigned int d = 0; d < sizeof(second_winMSG[0]) - 16; d++)
 	{
 		for (int col = 0; col < 24; col++)
 		{

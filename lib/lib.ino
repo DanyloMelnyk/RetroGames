@@ -15,7 +15,7 @@ struct Pin
 };
 
 // LED matrix brightness: between 0(darkest) and 15(brightest)
-const short intensity = 3;
+const short intensity = 6;
 
 // lower = faster message scrolling
 const short messageSpeed = 1;
@@ -28,7 +28,7 @@ Point joystickHome2(500, 500);
 const int joystickThreshold = 160;
 Joystic j;
 
-long time;
+unsigned long time;
 
 LedControl matrix(Pin::DIN, Pin::CLK, Pin::CS, 5);
 
