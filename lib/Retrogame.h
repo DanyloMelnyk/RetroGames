@@ -1,5 +1,5 @@
 ﻿/*
-  Retrogame.h - Library for work with MAX7219 8x8 matrix.
+  Retrogames.h - Library for work with MAX7219 8x8 matrix.
   Created by Danylo Melnyk(https://github.com/DanyloMelnyk), 01.11.2019.
 */
 

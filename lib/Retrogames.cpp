@@ -1,9 +1,10 @@
 ﻿/*
-  Retrogame.cpp - Library for work with MAX7219 8x8 matrix.
+  Retrogames.cpp - Library for work with MAX7219 8x8 matrix.
   Created by Danylo Melnyk(https://github.com/DanyloMelnyk), 01.11.2019.
 */
 
 #include "LedControl.h"
+#include "Retrogame.h"
 
 #define joystickY1 A2
 #define joystickX1 A3
@@ -12,11 +13,6 @@
 #define joystickY2 A0
 #define joystickX2 A1
 #define joystick2but 2
-
-struct Point { // оголош типу даних Point
-  int row = 0, col = 0;
-  Point(int row = 0, int col = 0): row(row), col(col) {}
-};
 
 const PROGMEM bool digits[10][8][8] = {
   {
@@ -278,55 +274,7 @@ const PROGMEM bool scoreMessage[8][66] = {
   }
 };
 
-class Joystic
-{
-public:
-  Point joystickHome1;
-  Point joystickHome2;
-  const int joystickThreshold = 160;
-
-  void calibrateJoystick()
-  {
-    Point values;
-
-    for (int i = 0; i < 10; i++)
-    {
-      values.row += analogRead(joystickX1);
-      values.col += analogRead(joystickY1);
-    }
-
-    joystickHome1.row = values.row / 10;
-    joystickHome1.col = values.col / 10;
-
-    values.row = 0;
-    values.col = 0;
-
-    for (int i = 0; i < 10; i++)
-    {
-      values.row += analogRead(joystickX2);
-      values.col += analogRead(joystickY2);
-    }
-
-    joystickHome2.row = values.row / 10;
-    joystickHome2.col = values.col / 10;
-  }
-
-  void waitJoystic() // common
-  {
-    while (analogRead(joystickY1) < joystickHome1.col - joystickThreshold
-      || analogRead(joystickY1) > joystickHome1.col + joystickThreshold
-      || analogRead(joystickX1) < joystickHome1.row - joystickThreshold
-      || analogRead(joystickX1) > joystickHome1.row + joystickThreshold
-      || analogRead(joystickY2) < joystickHome2.col - joystickThreshold
-      || analogRead(joystickY2) > joystickHome2.col + joystickThreshold
-      || analogRead(joystickX2) < joystickHome2.row - joystickThreshold
-      || analogRead(joystickX2) > joystickHome2.row + joystickThreshold)
-    {
-    }
-  }
-};
-
-void setLEDM(LedControl* matrix, int row, int col, int v) // COMMON
+void setLEDM(LedControl* matrix, int row, int col, int v)
 {
 	if (row > 7 && row < 16)
 	{
@@ -368,7 +316,6 @@ void print_score(LedControl* matrix, int score, Joystic j)
 	{
 		for (int col = 0; col < 24; col++)
 		{
-			delay(1);
 			for (int row = 0; row < 8; row++)
 			{
 				if (d <= 66 - 8)
@@ -412,10 +359,8 @@ void first_win(LedControl* matrix, Joystic j)
 	{
 		for (int col = 0; col < 24; col++)
 		{
-			delay(1);
 			for (int row = 0; row < 8; row++)
 			{
-				// this reads the byte from the PROGMEM and displays it on the screen
 				setLEDM(matrix, row + 8, col, pgm_read_byte(&(first_winMSG[row][col + d])));
 			}
 		}
@@ -435,10 +380,8 @@ void second_win(LedControl* matrix, Joystic j)
 	{
 		for (int col = 0; col < 24; col++)
 		{
-			delay(1);
 			for (int row = 0; row < 8; row++)
 			{
-				// this reads the byte from the PROGMEM and displays it on the screen
 				setLEDM(matrix, row + 8, col, pgm_read_byte(&(second_winMSG[row][col + d])));
 			}
 		}
@@ -466,7 +409,7 @@ void pong_score(LedControl* matrix, int player1Score, int player2Score)
 
 void choose_menu_item(LedControl* matrix, int m, int choose)
 {
-	for (int row = 0; row < 8; row++)
+	for (int row = 0; row < 8; row++) // invert
 	{
 		for (int col = 0; col < 8; col++)
 		{
@@ -476,8 +419,7 @@ void choose_menu_item(LedControl* matrix, int m, int choose)
 
 	delay(30);
 
-	// invert it back
-	for (int row = 0; row < 8; row++)
+	for (int row = 0; row < 8; row++)	// invert it back
 	{
 		for (int col = 0; col < 8; col++)
 		{

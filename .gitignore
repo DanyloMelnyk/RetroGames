@@ -10,3 +10,13 @@ lib/.vs/lib/v16/.suo
 *.filters
 *.user
 lib/__vm/.lib.vsarduino.h
+lib/__vm/Compile.vmps.xml
+lib/__vm/Configuration.Release.vmps.xml
+lib/__vm/Upload.vmps.xml
+*.sln
+*.buildinfo
+*.d
+*.o
+*.eep
+*.elf
+*.hex
