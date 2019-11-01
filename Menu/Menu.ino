@@ -261,6 +261,38 @@ float mapf(float x, float in_min, float in_max, float out_min, float out_max)
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+const PROGMEM bool icon[][8][8] = {
+  { //Snake1,
+    0, 1, 1, 0, 0, 0, 0, 0,
+    1, 0, 0, 1, 0, 0, 0, 0,
+    1, 0, 0, 0, 0, 0, 0, 0,
+    0, 1, 1, 0, 0, 0, 0, 0,
+    0, 0, 0, 1, 0, 0, 0, 1,
+    1, 0, 0, 1, 0, 0, 1, 1,
+    0, 1, 1, 0, 0, 0, 0, 1,
+    0, 0, 0, 0, 0, 0, 0, 1
+  },
+  { //Snake2
+    0, 0, 0, 0, 1, 1, 0, 1,
+    0, 0, 0, 1, 0, 0, 1, 1,
+    0, 0, 0, 0, 1, 0, 0, 1,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 1, 0, 0, 1, 1, 0, 0,
+    1, 0, 0, 1, 0, 0, 1, 0,
+    1, 0, 0, 1, 0, 0, 1, 0,
+    0, 1, 1, 0, 0, 1, 0, 0,
+  },
+  { //Pong2
+    0, 1, 1, 1, 1, 1, 1, 1,
+    0, 0, 0, 0, 1, 0, 0, 1,
+    0, 0, 0, 0, 1, 0, 0, 1,
+    0, 0, 0, 0, 0, 1, 1, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    1, 0, 0, 1, 0, 0, 0, 0,
+    1, 1, 0, 0, 1, 0, 0, 0,
+    1, 0, 1, 1, 0, 0, 0, 0,
+  }
+};
 
 
 const PROGMEM bool digits[][8][8] = {
@@ -379,11 +411,11 @@ void menu()
   {
     for (int j = 0; j < 8; j++)
     {
-      matrix.setLed(0, i, j, pgm_read_byte(&(digits[1][i][j])));
-      matrix.setLed(1, i, j, pgm_read_byte(&(digits[2][i][j])));
-      matrix.setLed(2, i, j, pgm_read_byte(&(digits[0][i][j])));
-      matrix.setLed(3, i, j, pgm_read_byte(&(digits[3][i][j])));
-      matrix.setLed(4, i, j, pgm_read_byte(&(digits[4][i][j])));
+      matrix.setLed(0, i, j, pgm_read_byte(&(icon[0][i][j])));
+      matrix.setLed(1, i, j, pgm_read_byte(&(icon[1][i][j])));
+      //matrix.setLed(2, i, j, pgm_read_byte(&(digits[0][i][j])));
+      matrix.setLed(3, i, j, pgm_read_byte(&(icon[2][i][j])));
+      //matrix.setLed(4, i, j, pgm_read_byte(&(digits[4][i][j])));
     }
   }
 
@@ -396,8 +428,8 @@ void menu()
 
     if (Y1 < joystickHome1.col - joystickThreshold || Y2 < joystickHome2.col - joystickThreshold) // up
     {
-      choose = 4;
-      m = 4;
+      //choose = 4;
+      //m = 4;
     }
     else if (Y1 > joystickHome1.col + joystickThreshold || Y2 > joystickHome2.col + joystickThreshold) // down
     {
@@ -421,7 +453,7 @@ void menu()
       {
         for (int col = 0; col < 8; col++)
         {
-          matrix.setLed(m, row, col, !pgm_read_byte(&(digits[choose][row][col])));
+          matrix.setLed(m, row, col, !pgm_read_byte(&(icon[choose - 1][row][col])));
         }
       }
 
@@ -432,10 +464,10 @@ void menu()
       {
         for (int col = 0; col < 8; col++)
         {
-          matrix.setLed(m, row, col, pgm_read_byte(&(digits[choose][row][col])));
+          matrix.setLed(m, row, col, pgm_read_byte(&(icon[choose - 1][row][col])));
         }
       }
-      delay(90);
+      delay(130);
     }
   }
   while ((digitalRead(Pin::joystick1but) == HIGH && digitalRead(Pin::joystick2but) == HIGH) || choose == 0);
@@ -573,25 +605,25 @@ void loop() //common
         scanJoystick(); // watches joystick movements
       }
       while (snake1Direction == 0);
-
-      calculateSnake(); // calculates snake parameters
-      handleGameStates();
-
-      // intelligently blink with the food
-      while (millis() < 100 + time)
-      {
-      }
-
-      setLEDM(food.row, food.col, 0);
-
-      time = millis();
-
-      // uncomment this if you want the current game board to be printed to the serial (slows down the game a bit)
-      //dumpGameBoard();
-      move++;
-
-      if (move % 20 == 0) moveInterval -= 10;
     }
+    calculateSnake(); // calculates snake parameters
+    handleGameStates();
+
+    // intelligently blink with the food
+    while (millis() < 100 + time)
+    {
+    }
+
+    setLEDM(food.row, food.col, 0);
+
+    time = millis();
+
+    // uncomment this if you want the current game board to be printed to the serial (slows down the game a bit)
+    //dumpGameBoard();
+    move++;
+
+    if (move % 20 == 0) moveInterval -= 10;
+
   }
 }
 
@@ -763,12 +795,12 @@ void updateBall() // pong
 void update() // pong
 {
   if (now - lastMoveTime > moveInterval)
-  {  
+  {
     updateBall(); // переміщення м'яча
-    
+
     setLEDM(lastballY, lastballX + 8, 0); // знищ. минулої поз м'яча
     setLEDM(ballY, ballX + 8, 1); // відображення м'яча
-    
+
     lastballX = ballX;
     lastballY = ballY;
 
