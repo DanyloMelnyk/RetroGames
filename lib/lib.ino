@@ -15,7 +15,7 @@ struct Pin
 };
 
 // LED matrix brightness: between 0(darkest) and 15(brightest)
-const short intensity = 6;
+const short intensity = 12;
 
 // lower = faster message scrolling
 const short messageSpeed = 1;

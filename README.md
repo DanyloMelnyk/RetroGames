@@ -2,6 +2,9 @@
 
 Проект "Ретро ігри" студентів групи КН-115 кафедри СШІ НУ "Львівська Політехніка"
 
+![Case render](https://github.com/DanyloMelnyk/RetroGames/blob/master/img/model1.png)
+![Image of realization](https://github.com/DanyloMelnyk/RetroGames/blob/master/img/photo1.png)
+
 ## Структура файлів
 * [Snake.ino](https://github.com/DanyloMelnyk/RetroGames/blob/master/Games/Snake/Snake.ino) - змійка для 1 гравця та 3 матриці
 * [SnakeFULL.ino](https://github.com/DanyloMelnyk/RetroGames/blob/master/Games/SnakeFULL/SnakeFULL.ino) - змійка для 1 гравця та 5 матриць
@@ -22,7 +25,7 @@
 
 ## TODO
 
-- [ ] Корпус дя матриць і електроніки
+- [X] Корпус для матриць і електроніки
 - [ ] Корпус для джойстиків
 - [X] Обробка натискання кнопок на джойстиках
 - [X] Меню вибору ігор
