@@ -42,4 +42,7 @@
 
 - [ ] Перехід на STM32
 
-## Ліцензія
+## Список використаних джерел
+* [LedControl](https://github.com/wayoda/LedControl/) - бібліотека для роботи з MAX-7219;
+* [arduino-snake](https://github.com/ondt/arduino-snake/) - базовий алгоритм роботи гри “Snake” для однієї матриці;
+* [LedMatrixPong](https://github.com/monur/LedMatrixPong/) - базовий алгоритм роботи гри “Pong” для однієї матриці.
