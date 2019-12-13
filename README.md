@@ -2,9 +2,9 @@
 
 Проект "Ретро ігри" студентів групи КН-115 кафедри СШІ НУ "Львівська Політехніка"
 
-![Case render](https://github.com/DanyloMelnyk/RetroGames/blob/master/img/model1.png =250x)
-![Image of realization](https://github.com/DanyloMelnyk/RetroGames/blob/master/img/photo1.png =250x)
-![Image of realization 2](https://github.com/DanyloMelnyk/RetroGames/blob/master/img/on.png =250x)
+<img src="https://github.com/DanyloMelnyk/RetroGames/blob/master/img/model1.png" width="200">
+<img src="https://github.com/DanyloMelnyk/RetroGames/blob/master/img/photo1.png" width="200">
+<img src="https://github.com/DanyloMelnyk/RetroGames/blob/master/img/on.png" width="200">
 
 ## Структура файлів
 * [Snake.ino](https://github.com/DanyloMelnyk/RetroGames/blob/master/Games/Snake/Snake.ino) - змійка для 1 гравця та 3 матриці
