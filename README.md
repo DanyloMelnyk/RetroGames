@@ -19,7 +19,13 @@
 
 ## Автори
 
-* ** ** - * * - []()
+* **Мельник Данило** - *розробник програмного та апаратного забезпечення* - [GIT](https://github.com/DanyloMelnyk)
+* **Пасемко Андрій** - *презентатор, розробник апаратного забезпечення* - [GIT](https://github.com/Pasemko)
+* **Рокицька Анастасія, Галік Вікторія** - *дизайн, ідеї* - [GIT](https://github.com/Anastasiia-Rokytska), [GIT](https://github.com/VictoriaHalik)
+* **Сирватка Максим** - *розробник програмного забезпечення, тестер* - [GIT](https://github.com/maxymsyrvatka)
+* **Попів Христина** - *презентатор, тестер* - [GIT](https://github.com/Khrystynapopiv)
+
+
 
 Список дописувачів [тут](https://github.com/DanyloMelnyk/RetroGames/graphs/contributors).
 
