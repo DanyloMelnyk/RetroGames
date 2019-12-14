@@ -50,5 +50,5 @@
 #### Використані програми
 * [Arduino IDE](https://www.arduino.cc/en/main/software "Arduino IDE") - середовище розробки, компілятор;
 * [Visual Studio](https://visualstudio.microsoft.com/ "Visual Studio") - середовище розробки
- * [vMicro](https://www.visualmicro.com/ "vMicro") - плагін для Visual Studio для підтримки Arduino;
+  * [vMicro](https://www.visualmicro.com/ "vMicro") - плагін для Visual Studio для підтримки Arduino;
 * [Autodesk Fusion 360](https://www.autodesk.com/products/fusion-360/overview "Autodesk Fusion 360") - 3D моделювання.
