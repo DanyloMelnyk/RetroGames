@@ -1,6 +1,6 @@
 ﻿/*
   Retrogames.h - Library for work with MAX7219 8x8 matrix.
-  Created by Danylo Melnyk(https://github.com/DanyloMelnyk), 01.11.2019.
+  Created by Danylo Melnyk(https://github.com/DanyloMelnyk) for Retro Games Cube(https://github.com/DanyloMelnyk/RetroGames), 01.11.2019.
 */
 
 #ifndef RetroGamesLib
@@ -20,6 +20,14 @@
 #include <Arduino.h>
 #include "LedControl.h"
 
+enum
+{
+  up = 1,
+  right = 2,
+  down = 3,
+  left = 4
+};
+
 struct Point { // оголош типу даних Point
   int row = 0, col = 0;
   Point(int row = 0, int col = 0): row(row), col(col) {}
@@ -27,50 +35,82 @@ struct Point { // оголош типу даних Point
 
 class Joystic
 {
-public:
-	Point joystickHome1;
-	Point joystickHome2;
-	const int joystickThreshold = 160;
+  public:
+    Point joystickHome1;
+    Point joystickHome2;
+    const int joystickThreshold = 160;
 
-	void calibrateJoystick()
-	{
-		Point values;
+    void calibrateJoystick()
+    {
+      Point values;
 
-		for (int i = 0; i < 10; i++)
-		{
-			values.row += analogRead(joystickX1);
-			values.col += analogRead(joystickY1);
-		}
+      for (int i = 0; i < 10; i++)
+      {
+        values.row += analogRead(joystickX1);
+        values.col += analogRead(joystickY1);
+      }
 
-		joystickHome1.row = values.row / 10;
-		joystickHome1.col = values.col / 10;
+      joystickHome1.row = values.row / 10;
+      joystickHome1.col = values.col / 10;
 
-		values.row = 0;
-		values.col = 0;
+      values.row = 0;
+      values.col = 0;
 
-		for (int i = 0; i < 10; i++)
-		{
-			values.row += analogRead(joystickX2);
-			values.col += analogRead(joystickY2);
-		}
+      for (int i = 0; i < 10; i++)
+      {
+        values.row += analogRead(joystickX2);
+        values.col += analogRead(joystickY2);
+      }
 
-		joystickHome2.row = values.row / 10;
-		joystickHome2.col = values.col / 10;
-	}
+      joystickHome2.row = values.row / 10;
+      joystickHome2.col = values.col / 10;
+    }
 
-	void waitJoystic() // common
-	{
-		while (analogRead(joystickY1) < joystickHome1.col - joystickThreshold
-			|| analogRead(joystickY1) > joystickHome1.col + joystickThreshold
-			|| analogRead(joystickX1) < joystickHome1.row - joystickThreshold
-			|| analogRead(joystickX1) > joystickHome1.row + joystickThreshold
-			|| analogRead(joystickY2) < joystickHome2.col - joystickThreshold
-			|| analogRead(joystickY2) > joystickHome2.col + joystickThreshold
-			|| analogRead(joystickX2) < joystickHome2.row - joystickThreshold
-			|| analogRead(joystickX2) > joystickHome2.row + joystickThreshold)
-		{
-		}
-	}
+    int scan(int player)
+    {
+      int X, Y;
+
+      if (player == 1)
+      {
+        X = analogRead(joystickX1);
+        Y = analogRead(joystickY1);
+
+        if (X < joystickHome1.row - joystickThreshold)
+          return left;
+        if (X > joystickHome1.row + joystickThreshold)
+          return right;
+        if (Y < joystickHome1.col - joystickThreshold)
+          return down;
+        if (Y > joystickHome1.col + joystickThreshold)
+          return up;
+      }
+      else
+      {
+        X = analogRead(joystickX2);
+        Y = analogRead(joystickY2);
+
+        if (X < joystickHome1.row - joystickThreshold)
+          return right;
+        if (X > joystickHome1.row + joystickThreshold)
+          return left;
+        if (Y < joystickHome1.col - joystickThreshold)
+          return up;
+        if (Y > joystickHome1.col + joystickThreshold)
+          return down;
+      }
+
+
+
+      return -1;
+    }
+
+    void waitJoystic() // common
+    {
+      while (scan(1) == -1 && scan(2) == -1)
+      {
+        delay(1);
+      }
+    }
 };
 
 void setLEDM(LedControl* matrix, int row, int col, int v); //встановлення стану діода(пікселя) на рядку row(нумерація зверху) і стовпці row(нум. зліва) на v(1-включений, 0 - викл)

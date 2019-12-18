@@ -1,6 +1,6 @@
 ﻿/*
   Retrogames.cpp - Library for work with MAX7219 8x8 matrix.
-  Created by Danylo Melnyk(https://github.com/DanyloMelnyk), 01.11.2019.
+  Created by Danylo Melnyk(https://github.com/DanyloMelnyk) for Retro Games Cube(https://github.com/DanyloMelnyk/RetroGames), 01.11.2019.
 */
 
 #include "LedControl.h"
@@ -342,6 +342,16 @@ void print_score(LedControl* matrix, int score, Joystic j)
 					}
 				}
 			}
+
+			if (j.scan(1) != -1 || j.scan(2) != -1)
+			{
+				for (int i = 0; i < MATRIX_NUM; i++)
+				{
+					matrix->clearDisplay(i);
+				}
+
+				return;
+			}
 		}
 	}
 
@@ -363,6 +373,16 @@ void first_win(LedControl* matrix, Joystic j)
 			{
 				setLEDM(matrix, row + 8, col, pgm_read_byte(&(first_winMSG[row][col + d])));
 			}
+
+			if (j.scan(1) != -1 || j.scan(2) != -1)
+			{
+				for (int i = 0; i < MATRIX_NUM; i++)
+				{
+					matrix->clearDisplay(i);
+				}
+
+				return;
+			}
 		}
 	}
 
@@ -383,6 +403,16 @@ void second_win(LedControl* matrix, Joystic j)
 			for (int row = 0; row < 8; row++)
 			{
 				setLEDM(matrix, row + 8, col, pgm_read_byte(&(second_winMSG[row][col + d])));
+			}
+
+			if (j.scan(1) != -1 || j.scan(2) != -1)
+			{
+				for (int i = 0; i < MATRIX_NUM; i++)
+				{
+					matrix->clearDisplay(i);
+				}
+
+				return;
 			}
 		}
 	}

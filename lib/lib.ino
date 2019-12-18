@@ -5,13 +5,20 @@
 #define ROW_NUM 24
 #define COL_NUM 24
 
+#define CLK 10
+#define CS 11
+#define DIN 12
+
+// Retro Games Cube
+// https://github.com/DanyloMelnyk/RetroGames
+
 int MODE = 0; // 0 - menu, 1 - snake, 2 - pong
 
-struct Pin
+enum
 {
-  static const short CLK = 10; // clock for LED matrix
-  static const short CS = 11; // chip-select for LED matrix
-  static const short DIN = 12; // data-in for LED matrix
+  MENU = 0,
+  SNAKE,
+  PONG
 };
 
 // LED matrix brightness: between 0(darkest) and 15(brightest)
@@ -20,17 +27,13 @@ const short intensity = 12;
 // lower = faster message scrolling
 const short messageSpeed = 1;
 
-// construct with default values in case the user turns off the calibration
-Point joystickHome1(500, 500);
-Point joystickHome2(500, 500);
-
 // threshold where movement of the joystick will be accepted
 const int joystickThreshold = 160;
 Joystic j;
 
 unsigned long time;
 
-LedControl matrix(Pin::DIN, Pin::CLK, Pin::CS, 5);
+LedControl matrix(DIN, CLK, CS, 5);
 
 ////////// --------Pong----------//////
 unsigned long lastRefreshTime = 0;
@@ -78,12 +81,6 @@ int snake2Length = initialSnakeLength; // choosed by the user in the config sect
 int snake1Direction = 0; // if it is 0, the snake does not move
 int snake2Direction = 0; // if it is 0, the snake does not move
 
-// direction constants
-const short up = 1;
-const short right = 2;
-const short down = 3; // 'down - 2' must be 'up'
-const short left = 4; // 'left - 2' must be 'right'
-
 // snake body segments storage
 unsigned char gameboard[ROW_NUM][COL_NUM] = {};
 
@@ -98,14 +95,10 @@ void unrollSnake();
 
 //// common
 
-void scanJoystick()
+void scanJoystick() // Обробка джойстиків
 {
-  // Обробка джойстиків
-  int Y1 = analogRead(joystickY1);
-  int Y2 = analogRead(joystickY2);
-
-  if (digitalRead(joystick1but) == LOW && digitalRead(joystick2but) == LOW)
-  {
+  /*if (digitalRead(joystick1but) == LOW && digitalRead(joystick2but) == LOW) // PAUSE
+    {
     delay(1000);
 
     do
@@ -113,17 +106,16 @@ void scanJoystick()
       delay(1);
     }
     while (!(digitalRead(joystick1but) == LOW && digitalRead(joystick2but) == LOW));
-
-    //setup();
-    //return;
-  }
+    }*/
 
   if (MODE == 2) // Pong
   {
-    if (Y1 < joystickHome1.col - joystickThreshold && player1Position > 0) // down
+    int scan = j.scan(1);
+
+    if (scan == left && player1Position > 0) // down right
     {
       player1Position--;
-    	for (int i = lastp1Position; i < lastp1Position + 3; i++)
+      for (int i = lastp1Position; i < lastp1Position + 3; i++)
         matrix.setLed(0, 7, i, 0);
 
       for (int i = player1Position; i < player1Position + 3; i++)
@@ -131,10 +123,11 @@ void scanJoystick()
 
       lastp1Position = player1Position;
     }
-    else if (Y1 > joystickHome1.col + joystickThreshold && player1Position < 5) // up
+    else if (scan == right && player1Position < 5) // up left
     {
       player1Position++;
-    	for (int i = lastp1Position; i < lastp1Position + 3; i++)
+
+      for (int i = lastp1Position; i < lastp1Position + 3; i++)
         matrix.setLed(0, 7, i, 0);
 
       for (int i = player1Position; i < player1Position + 3; i++)
@@ -143,24 +136,29 @@ void scanJoystick()
       lastp1Position = player1Position;
     }
 
-    if (Y2 < joystickHome2.col - joystickThreshold && player2Position < 5) // up
+    scan = j.scan(2);
+
+    if (scan == right && player2Position < 5) // up
     {
       player2Position++;
-    	for (int i = lastp2Position; i < lastp2Position + 3; i++)
+
+      for (int i = lastp2Position; i < lastp2Position + 3; i++)
         matrix.setLed(4, 0, i, 0);
 
       for (int i = player2Position; i < player2Position + 3; i++)
         matrix.setLed(4, 0, i, 1);
+
       lastp2Position = player2Position;
     }
-    else if (Y2 > joystickHome2.col + joystickThreshold && player2Position > 0) // down
+    else if (scan == left && player2Position > 0) // down
     {
       player2Position--;
-    	for (int i = lastp2Position; i < lastp2Position + 3; i++)
+      for (int i = lastp2Position; i < lastp2Position + 3; i++)
         matrix.setLed(4, 0, i, 0);
 
       for (int i = player2Position; i < player2Position + 3; i++)
         matrix.setLed(4, 0, i, 1);
+
       lastp2Position = player2Position;
     }
 
@@ -168,51 +166,25 @@ void scanJoystick()
   }
   else if (MODE == 1) // Snake
   {
+    //Serial.println("Snake 1: ");
+
     int previousDirection1 = snake1Direction; // save the last direction
     int previousDirection2 = snake2Direction; // save the last direction
     unsigned long timestamp = millis();
 
-    //while (millis() < timestamp + snakeSpeed)
     do
     {
-      int X1 = analogRead(joystickX1);
-      int Y1 = analogRead(joystickY1);
-      int X2, Y2;
+      int Direction1  = j.scan(1);
+
+      if (!((Direction1 + 2 == previousDirection1 || Direction1 - 2 == previousDirection1) && previousDirection1 != 0) && Direction1 != -1) // ignore directional change by 180 degrees (no effect for non-moving snake)
+        snake1Direction = Direction1;
 
       if (!one_player)
       {
-        X2 = analogRead(joystickX2);
-        Y2 = analogRead(joystickY2);
-      }
+        int Direction2 = j.scan(2);
 
-      // determine the direction of the snake
-      Y1 < joystickHome1.col - joystickThreshold ? snake1Direction = up : 0;
-      Y1 > joystickHome1.col + joystickThreshold ? snake1Direction = down : 0;
-      X1 < joystickHome1.row - joystickThreshold ? snake1Direction = right : 0; //left : 0;
-      X1 > joystickHome1.row + joystickThreshold ? snake1Direction = left : 0; //right : 0;
-
-      // ignore directional change by 180 degrees (no effect for non-moving snake)
-      snake1Direction + 2 == previousDirection1 && previousDirection1 != 0
-      ? snake1Direction = previousDirection1
-                          : 0;
-      snake1Direction - 2 == previousDirection1 && previousDirection1 != 0
-      ? snake1Direction = previousDirection1
-                          : 0;
-
-      if (!one_player)
-      {
-        Y2 < joystickHome2.col - joystickThreshold ? snake2Direction = up : 0;
-        Y2 > joystickHome2.col + joystickThreshold ? snake2Direction = down : 0;
-        X2 < joystickHome2.row - joystickThreshold ? snake2Direction = right : 0; //left : 0;
-        X2 > joystickHome2.row + joystickThreshold ? snake2Direction = left : 0; //right : 0;
-
-        // ignore directional change by 180 degrees (no effect for non-moving snake)
-        snake2Direction + 2 == previousDirection2 && previousDirection2 != 0
-        ? snake2Direction = previousDirection2
-                            : 0;
-        snake2Direction - 2 == previousDirection2 && previousDirection2 != 0
-        ? snake2Direction = previousDirection2
-                            : 0;
+        if (!((Direction2 + 2 == previousDirection2 || Direction2 - 2 == previousDirection2) && previousDirection2 != 0) && Direction2 != -1) // ignore directional change by 180 degrees (no effect for non-moving snake)
+          snake2Direction = Direction2;
       }
     } while (millis() < timestamp + moveInterval);
   }
@@ -227,31 +199,29 @@ void menu()
     matrix.clearDisplay(i);
   }
 
-	draw_menu(&matrix);
+  draw_menu(&matrix);
 
   do
   {
-    int X1 = analogRead(joystickX1);
-    int Y1 = analogRead(joystickY1);
-    int X2 = analogRead(joystickX2);
-    int Y2 = analogRead(joystickY2);
+    int scan1 = j.scan(1);
+    int scan2 = j.scan(2);
 
-    if (Y1 < joystickHome1.col - joystickThreshold || Y2 < joystickHome2.col - joystickThreshold) // up
+    if (scan1 == up || scan2 == up) // up
     {
       //choose = 4;
       //m = 4;
     }
-    else if (Y1 > joystickHome1.col + joystickThreshold || Y2 > joystickHome2.col + joystickThreshold) // down
+    else if (scan1 == down || scan2 == down) // down
     {
       choose = 1;
       m = 0;
     }
-    else if (X1 < joystickHome1.row - joystickThreshold || X2 < joystickHome2.row - joystickThreshold) // right
+    else if (scan1 == right || scan2 == right) // right
     {
       choose = 2;
       m = 1;
     }
-    else if (X1 > joystickHome1.row + joystickThreshold || X2 > joystickHome2.row + joystickThreshold) // left
+    else if (scan1 == left || scan2 == left) // left
     {
       choose = 3;
       m = 3;
@@ -266,18 +236,18 @@ void menu()
   switch (choose)
   {
     case 1:
-      MODE = 1;
+      MODE = SNAKE;
       one_player = true;
       break;
     case 2:
-      MODE = 1;
+      MODE = SNAKE;
       one_player = false;
       break;
     case 3:
-      MODE = 2;
+      MODE = PONG;
       break;
     default:
-      MODE = 0;
+      MODE = MENU;
   }
 
   for (int i = 0; i < 5; i++)
@@ -296,7 +266,7 @@ void updateScore() // pong
 
 //// main
 
-void setup() //common
+void setup() // common
 {
   for (int i = 0; i < 5; i++)
   {
@@ -311,12 +281,13 @@ void setup() //common
 
   digitalWrite(joystick1but, HIGH);
   digitalWrite(joystick2but, HIGH);
-  //Serial.begin(115200);
 
-	j.calibrateJoystick();
+  j.calibrateJoystick();
 
   player1Score = 0;
   player2Score = 0;
+
+  Serial.begin(9600);
 
   do
   {
@@ -344,10 +315,11 @@ void loop() //common
   if (MODE == 2) // Pong
   {
     now = millis();
+
     if (isGameOn)
     {
-      scanJoystick();
       update();
+      scanJoystick();
     }
     else
     {
@@ -382,6 +354,7 @@ void loop() //common
       }
       while (snake1Direction == 0);
     }
+
     calculateSnake(); // calculates snake parameters
     handleGameStates();
 
@@ -426,6 +399,7 @@ void gameOver() // pong
     player1Score = 0;
     player2Score = 0;
   }
+
   if (player2Score == 3)
   {
     second_win(&matrix, j);
@@ -478,6 +452,7 @@ void restartGame() // pong
 
   for (int i = player2Position; i < player2Position + 3; i++)
     matrix.setLed(4, 0, i, 1);
+
   lastp2Position = player2Position;
 
   isGameOn = true;
@@ -485,33 +460,22 @@ void restartGame() // pong
 
 void updateBall() // pong
 {
-  if (!straight)
-  {
-    if (ballMovingLeft)
-      ballX--;
-    else
-      ballX++;
 
-    if (ballX <= 0) // зіткнення з лівою границею
-    {
-      ballMovingLeft = false;
-      ballX = 0;
-    }
-
-    else if (ballX >= 7) // зіткнення з правою границею
-    {
-      ballMovingLeft = true;
-      ballX = 7;
-    }
-  }
+  if (ballMovingLeft)
+    ballX--;
   else
-  {
-    if (ballMovingUp)
-      ballY--;
-    else
-      ballY++;
+    ballX++;
 
-    straight = false;
+  if (ballX <= 0) // зіткнення з лівою границею
+  {
+    ballMovingLeft = false;
+    ballX = 0;
+  }
+
+  else if (ballX >= 7) // зіткнення з правою границею
+  {
+    ballMovingLeft = true;
+    ballX = 7;
   }
 
   if (ballMovingUp)
@@ -529,19 +493,6 @@ void updateBall() // pong
       ballY++;
   }
 
-  if (ballY == 0)
-  {
-    player1Score++;
-    last_win = 1;
-    gameOver();
-  }
-  else if (ballY == 23)
-  {
-    player2Score++;
-    last_win = 2;
-    gameOver();
-  }
-
   if (ballY == 1 && ballX >= player2Position && ballX < player2Position + 3)
   {
     ballMovingUp = false;
@@ -553,6 +504,19 @@ void updateBall() // pong
     ballMovingUp = true;
     moveInterval -= 10;
     //buzz();
+  }
+
+  if (ballY == 0)
+  {
+    player1Score++;
+    last_win = 1;
+    gameOver();
+  }
+  else if (ballY == 23)
+  {
+    player2Score++;
+    last_win = 2;
+    gameOver();
   }
 
   setLEDM(&matrix, lastballY, lastballX + 8, 0);
@@ -779,12 +743,12 @@ void fixEdge()// causes the snake to appear on the other side of the screen if i
 
 void initialize()//snake
 {
-  snake1.row = 3;
+  snake1.row = 20; //3;
   snake1.col = 11;
 
   if (!one_player)
   {
-    snake2.row = 20;
+    snake2.row = 3; //20;
     snake2.col = 11;
   }
   else
@@ -1006,6 +970,16 @@ void unrollSnake()
     }
 
     delay(50);
+
+    if (j.scan(1) != -1 || j.scan(2) != -1)
+    {
+      for (int i = 0; i < MATRIX_NUM; i++)
+      {
+        matrix.clearDisplay(i);
+      }
+
+      return;
+    }
   }
 
   delay(600);
@@ -1025,4 +999,4 @@ void unrollSnake()
     }
   }
 }
-//Danylo Melnyk 25.10.2019
+//Retro Games Cube 25.10.2019
