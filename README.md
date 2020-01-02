@@ -13,7 +13,7 @@
 * [Snake2playerFULL.ino](https://github.com/DanyloMelnyk/RetroGames/blob/master/Games/Snake2playerFULL/Snake2playerFULL.ino) - змійка для 2 гравців та 5 матриць;
 * [pong.ino](https://github.com/DanyloMelnyk/RetroGames/blob/master/Games/pong/pong.ino) - ping-pong для 5 матриць;
 * [Menu.ino](https://github.com/DanyloMelnyk/RetroGames/blob/master/Menu/Menu.ino) - ping-pong чи змійка для 2 гравців, меню вибору ігор при запуску arduino;
-* [lib.ino](https://github.com/DanyloMelnyk/RetroGames/blob/master/lib/lib.ino) - ping-pong, змійка для 1 чи 2 гравців та меню, реалізовано з допомогою бібліотеки [Retrogame.h](https://github.com/DanyloMelnyk/RetroGames/blob/master/lib/Retrogame.h);
+* **[lib.ino](https://github.com/DanyloMelnyk/RetroGames/blob/master/lib/lib.ino)** - ping-pong, змійка для 1 чи 2 гравців та меню, реалізовано з допомогою бібліотеки [Retrogame.h](https://github.com/DanyloMelnyk/RetroGames/blob/master/lib/Retrogame.h);
 * [Retrogame.h](https://github.com/DanyloMelnyk/RetroGames/blob/master/lib/Retrogame.h) та [Retrogame.cpp](https://github.com/DanyloMelnyk/RetroGames/blob/master/lib/Retrogame.cpp) - бібліотека для обробки джойстиків, роботи з матрицями та виводу повідомлень;
 * [template.ino](https://github.com/DanyloMelnyk/RetroGames/blob/master/template/template.ino) - шаблон для написання програм з коментарями (реалізовано для 5 матриць);
 * [GameBoard.png](https://github.com/DanyloMelnyk/RetroGames/blob/master/GameBoard.png) - схема ігрового поля + адреси матриць.
