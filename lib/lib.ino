@@ -78,6 +78,7 @@ void generateFood(); // генерація нової їжі для snake
 void calculateSnake(); // хід в snake
 void handleGameStates(); // перевірка виграшу в snake
 void unrollSnake(); // анімація зникнення змії
+void buzz(char melody);
 
 //// common
 
@@ -150,9 +151,11 @@ void scanJoystick() // Обробка джойстиків
 			lastp2Position = player2Position;
 		}
 
-		matrix.send();
+		matrix.send(0);
+		matrix.send(2);
+		matrix.send(4);
 		
-		delay(100);
+		//delay(100);
 	}
 	else if (MODE == 1) // Snake
 	{
@@ -188,12 +191,12 @@ void menu()
 	matrix.clearDisplay();
 
 	draw_menu(&matrix);
+	unsigned long timestamp = millis(); // зберегти поточний час
 
 	do
 	{
 		int scan1 = j.scan(1);
 		int scan2 = j.scan(2);
-
 		if (scan1 == up || scan2 == up) // up
 		{
 			//choose = 4;
@@ -218,7 +221,13 @@ void menu()
 		if (m != -1)
 		{
 			choose_menu_item(&matrix, m, choose);
-		}
+			
+			if (timestamp - 800 > 0)
+			{
+				buzz(1);
+				timestamp = millis();
+			}
+		}		
 	}
 	while ((digitalRead(joystick1but) == HIGH && digitalRead(joystick2but) == HIGH) || choose == 0);
 
@@ -239,6 +248,8 @@ void menu()
 		MODE = MENU;
 	}
 
+	buzz(2);
+
 	matrix.clearDisplay();
 }
 
@@ -254,16 +265,11 @@ void updateScore() // pong
 
 void setup() // common
 {
-	for (int i = 0; i < 5; i++)
-	{
-		// ініціалізація матриць
-		//matrix.shutdown(i, false);
-		//matrix.setIntensity(i, intensity);
-		//matrix.clearDisplay(i);
-	}
-
 	pinMode(joystick1but, INPUT);
 	pinMode(joystick2but, INPUT);
+
+	pinMode(8, OUTPUT);//buzzer
+
 
 	digitalWrite(joystick1but, HIGH);
 	digitalWrite(joystick2but, HIGH);
@@ -273,7 +279,7 @@ void setup() // common
 	player1Score = 0;
 	player2Score = 0;
 
-	Serial.begin(9600);
+	//Serial.begin(9600);
 
 	do
 	{
@@ -360,10 +366,125 @@ void loop() //common
 	}
 }
 
+int melody[] = {
+  NOTE_E7, NOTE_E7, 0, NOTE_E7,
+  0, NOTE_C7, NOTE_E7, 0,
+  NOTE_G7, 0, 0,  0,
+  NOTE_G6, 0, 0, 0,
 
-void buzz() // common
+  NOTE_C7, 0, 0, NOTE_G6,
+  0, 0, NOTE_E6, 0,
+  0, NOTE_A6, 0, NOTE_B6,
+  0, NOTE_AS6, NOTE_A6, 0,
+
+  NOTE_G6, NOTE_E7, NOTE_G7,
+  NOTE_A7, 0, NOTE_F7, NOTE_G7,
+  0, NOTE_E7, 0, NOTE_C7,
+  NOTE_D7, NOTE_B6, 0, 0,
+
+  NOTE_C7, 0, 0, NOTE_G6,
+  0, 0, NOTE_E6, 0,
+  0, NOTE_A6, 0, NOTE_B6,
+  0, NOTE_AS6, NOTE_A6, 0,
+
+  NOTE_G6, NOTE_E7, NOTE_G7,
+  NOTE_A7, 0, NOTE_F7, NOTE_G7,
+  0, NOTE_E7, 0, NOTE_C7,
+  NOTE_D7, NOTE_B6, 0, 0
+};
+//Mario main them tempo
+int tempo[] = {
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+
+  9, 9, 9,
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+
+  9, 9, 9,
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+};
+
+int underworld_melody[] = {
+  NOTE_C4, NOTE_C5, NOTE_A3, NOTE_A4,
+  NOTE_AS3, NOTE_AS4, 0,
+  0,
+  NOTE_C4, NOTE_C5, NOTE_A3, NOTE_A4,
+  NOTE_AS3, NOTE_AS4, 0,
+  0,
+  NOTE_F3, NOTE_F4, NOTE_D3, NOTE_D4,
+  NOTE_DS3, NOTE_DS4, 0,
+  0,
+  NOTE_F3, NOTE_F4, NOTE_D3, NOTE_D4,
+  NOTE_DS3, NOTE_DS4, 0,
+  0, NOTE_DS4, NOTE_CS4, NOTE_D4,
+  NOTE_CS4, NOTE_DS4,
+  NOTE_DS4, NOTE_GS3,
+  NOTE_G3, NOTE_CS4,
+  NOTE_C4, NOTE_FS4, NOTE_F4, NOTE_E3, NOTE_AS4, NOTE_A4,
+  NOTE_GS4, NOTE_DS4, NOTE_B3,
+  NOTE_AS3, NOTE_A3, NOTE_GS3,
+  0, 0, 0
+};
+//Underwolrd tempo
+int underworld_tempo[] = {
+  12, 12, 12, 12,
+  12, 12, 6,
+  3,
+  12, 12, 12, 12,
+  12, 12, 6,
+  3,
+  12, 12, 12, 12,
+  12, 12, 6,
+  3,
+  12, 12, 12, 12,
+  12, 12, 6,
+  6, 18, 18, 18,
+  6, 6,
+  6, 6,
+  6, 6,
+  18, 18, 18, 18, 18, 18,
+  10, 10, 10,
+  10, 10, 10,
+  3, 3, 3
+};
+
+void buzz(char melody) // common
 {
-	//tone(speakerPin, 300, 20);
+	int t = melody * 300;
+	tone(8, t, 20);
+}
+
+void gameOverBuzz()
+{
+	int size = sizeof(underworld_melody) / sizeof(int);
+	for (int thisNote = 50; thisNote < size; thisNote++) {
+		int noteDuration = 1000 / underworld_tempo[thisNote];
+
+		tone(8, underworld_melody[thisNote], noteDuration);
+
+		int pauseBetweenNotes = noteDuration * 1.30;
+		delay(pauseBetweenNotes);
+
+		// stop the tone playing:
+		tone(8, 0, noteDuration);
+
+	}
 }
 
 ////////------- Pong ----/////
@@ -375,6 +496,8 @@ void gameOver() // pong
 
 	matrix.clearDisplay();
 
+	gameOverBuzz();
+	
 	if (player1Score == 3)
 	{
 		first_win(&matrix, j);
@@ -474,17 +597,19 @@ void updateBall() // pong
 			ballY++;
 	}
 
+	bool playBuzz = false;
+	
 	if (ballY == 1 && ballX >= player2Position && ballX < player2Position + 3)
 	{
 		ballMovingUp = false;
 		moveInterval -= 10;
-		//buzz();
+		playBuzz = true;
 	}
 	else if (ballY == 22 && ballX >= player1Position && ballX < player1Position + 3)
 	{
 		ballMovingUp = true;
 		moveInterval -= 10;
-		//buzz();
+		playBuzz = true;
 	}
 
 	if (ballY == 0)
@@ -500,8 +625,14 @@ void updateBall() // pong
 		gameOver();
 	}
 
-	setLEDM(&matrix, lastballY, lastballX + 8, 0);
-	setLEDM(&matrix, ballY, ballX + 8, 1);
+	setLEDM(&matrix, lastballY, lastballX + 8, 0, false);
+	setLEDM(&matrix, ballY, ballX + 8, 1, false);
+
+	if (playBuzz)
+		buzz(2);
+	else
+		buzz(1);
+
 	lastballX = ballX;
 	lastballY = ballY;
 }
@@ -512,9 +643,12 @@ void update() // pong
 	{
 		updateBall(); // переміщення м'яча
 
-		setLEDM(&matrix, lastballY, lastballX + 8, 0); // знищ. минулої поз м'яча
-		setLEDM(&matrix, ballY, ballX + 8, 1); // відображення м'яча
+		setLEDM(&matrix, lastballY, lastballX + 8, 0, false); // знищ. минулої поз м'яча
+		setLEDM(&matrix, ballY, ballX + 8, 1, false); // відображення м'яча
 
+		matrix.send(matrix_num(ballX, ballY));
+		matrix.send(matrix_num(lastballX, lastballY));
+		
 		lastballX = ballX;
 		lastballY = ballY;
 
@@ -822,7 +956,8 @@ void calculateSnake() //snake
 			return;
 		}
 	}
-
+	
+	int toBuzz = 1;
 	if (snake1.row == food.row && snake1.col == food.col) // їжа зїдена
 	{
 		food.row = -1;
@@ -830,6 +965,7 @@ void calculateSnake() //snake
 
 		snake1Length++;
 		moveInterval -= 30; // збільш швидкості
+		toBuzz = 2;
 	}
 
 	if (snake2.row == food.row && snake2.col == food.col) // їжа зїдена
@@ -839,6 +975,7 @@ void calculateSnake() //snake
 
 		snake2Length++;
 		moveInterval -= 30; // збільш швидкості
+		toBuzz = 2;
 	}
 
 	// встановлення "голови" змії на полі
@@ -861,6 +998,7 @@ void calculateSnake() //snake
 		}
 	}
 
+	buzz(toBuzz);
 	matrix.send();
 }
 
@@ -869,6 +1007,7 @@ void handleGameStates() //snake
 	if (gameOver1 || win1 || gameOver2 || win2)
 	{
 		unrollSnake();
+		gameOverBuzz();
 		int score = 0;
 
 		if (gameOver1 || win2)

@@ -43,36 +43,42 @@ void Joystic::calibrateJoystick()
 
 void setLEDM(LedControl* matrix, int row, int col, int v, bool upd)
 {
+	char to_update = -1;
 	if (row > 7 && row < 16)
 	{
 		// центральний ряд матриць
 		if (col < 8 && col >= 0)
 		{
 			matrix->setLed(3, row - 8, col, v);
+			to_update = 3;
 		}
 		else if (col >= 8 && col < 16)
 		{
 			matrix->setLed(2, row - 8, col - 8, v);
+			to_update = 2;
 		}
 		else if (col >= 16 && col < 24)
 		{
 			matrix->setLed(1, row - 8, col - 16, v);
+			to_update = 1;
 		}
 	}
 	else if (row > 15)
 	{
 		// нижня матриця
 		matrix->setLed(0, row - 16, col - 8, v);
+		to_update = 0;
 	}
 	else
 	{
 		// верхня матриця
 		matrix->setLed(4, row, col - 8, v);
+		to_update = 4;
 	}
 
 	if (upd)
 	{
-		matrix->send();
+		matrix->send(to_update);
 	}
 }
 
@@ -194,8 +200,8 @@ void pong_score(LedControl* matrix, int player1Score, int player2Score)
 		{
 			matrix->setLed(1, 7 - i, j, pgm_read_byte(&(digits[player2Score][j][i])));
 			matrix->setLed(3, i, 7 - j, pgm_read_byte(&(digits[player1Score][j][i])));
-			matrix->send();
 		}
+		matrix->send();
 	}
 }
 
