@@ -1,16 +1,8 @@
 #include "Max7219.h"
 #include "Retrogame.h"
 
-#define MATRIX_NUM 5
-#define ROW_NUM 24
-#define COL_NUM 24
-
-#define CLK 10
-#define CS 11
-#define DIN 12
-
 #define ENABLE_PAUSE // дозволити паузу
-
+//#define SERIAL_DEBUG // вивід в послідовний порт (19200 бод)
 // Retro Games Cube
 // https://github.com/DanyloMelnyk/RetroGames
 
@@ -23,13 +15,9 @@ enum
 	PONG
 };
 
-const char intensity = 12; // яскравість (між 0 і 15)
-
-Joystic j;
+HardwareController controller;
 
 unsigned long time;
-
-LedControl matrix(DIN, CLK, CS, 5, intensity);
 
 ////////// --------Pong----------//////
 unsigned long lastRefreshTime = 0;
@@ -78,7 +66,6 @@ void generateFood(); // генерація нової їжі для snake
 void calculateSnake(); // хід в snake
 void handleGameStates(); // перевірка виграшу в snake
 void unrollSnake(); // анімація зникнення змії
-void buzz(char melody);
 
 //// common
 
@@ -92,23 +79,22 @@ void scanJoystick() // Обробка джойстиків
 		do
 		{
 			delay(1);
-		}
-		while (!(digitalRead(joystick1but) == LOW && digitalRead(joystick2but) == LOW));
+		} while (!(digitalRead(joystick1but) == LOW && digitalRead(joystick2but) == LOW));
 	}
 #endif
 
 	if (MODE == 2) // Pong
 	{
-		int scan = j.scan(1);
+		int scan = controller.j.scan(1);
 
 		if (scan == left && player1Position > 0)
 		{
 			player1Position--;
 			for (int i = lastp1Position; i < lastp1Position + 3; i++)
-				matrix.setLed(0, 7, i, false);
+				controller.matrix.setLed(0, 7, i, false);
 
 			for (int i = player1Position; i < player1Position + 3; i++)
-				matrix.setLed(0, 7, i, true);
+				controller.matrix.setLed(0, 7, i, true);
 
 			lastp1Position = player1Position;
 		}
@@ -117,25 +103,25 @@ void scanJoystick() // Обробка джойстиків
 			player1Position++;
 
 			for (int i = lastp1Position; i < lastp1Position + 3; i++)
-				matrix.setLed(0, 7, i, false);
+				controller.matrix.setLed(0, 7, i, false);
 
 			for (int i = player1Position; i < player1Position + 3; i++)
-				matrix.setLed(0, 7, i, true);
+				controller.matrix.setLed(0, 7, i, true);
 
 			lastp1Position = player1Position;
 		}
 
-		scan = j.scan(2);
+		scan = controller.j.scan(2);
 
 		if (scan == right && player2Position < 5)
 		{
 			player2Position++;
 
 			for (int i = lastp2Position; i < lastp2Position + 3; i++)
-				matrix.setLed(4, 0, i, false);
+				controller.matrix.setLed(4, 0, i, false);
 
 			for (int i = player2Position; i < player2Position + 3; i++)
-				matrix.setLed(4, 0, i, true);
+				controller.matrix.setLed(4, 0, i, true);
 
 			lastp2Position = player2Position;
 		}
@@ -143,18 +129,18 @@ void scanJoystick() // Обробка джойстиків
 		{
 			player2Position--;
 			for (int i = lastp2Position; i < lastp2Position + 3; i++)
-				matrix.setLed(4, 0, i, false);
+				controller.matrix.setLed(4, 0, i, false);
 
 			for (int i = player2Position; i < player2Position + 3; i++)
-				matrix.setLed(4, 0, i, true);
+				controller.matrix.setLed(4, 0, i, true);
 
 			lastp2Position = player2Position;
 		}
 
-		matrix.send(0);
-		matrix.send(2);
-		matrix.send(4);
-		
+		controller.matrix.send(0);
+		controller.matrix.send(2);
+		controller.matrix.send(4);
+
 		//delay(100);
 	}
 	else if (MODE == 1) // Snake
@@ -165,7 +151,7 @@ void scanJoystick() // Обробка джойстиків
 
 		do
 		{
-			char Direction1 = j.scan(1);
+			char Direction1 = controller.j.scan(1);
 
 			if (!((Direction1 + 2 == previousDirection1 || Direction1 - 2 == previousDirection1) && previousDirection1
 				!= 0) && Direction1 != -1) // ігнорувати поворот на 180 градусів
@@ -173,30 +159,27 @@ void scanJoystick() // Обробка джойстиків
 
 			if (!one_player)
 			{
-				char Direction2 = j.scan(2);
+				char Direction2 = controller.j.scan(2);
 
 				if (!((Direction2 + 2 == previousDirection2 || Direction2 - 2 == previousDirection2) &&
 					previousDirection2 != 0) && Direction2 != -1) // ігнорувати поворот на 180 градусів
 					snake2Direction = Direction2;
 			}
-		}
-		while (millis() < timestamp + moveInterval);
+		} while (millis() < timestamp + moveInterval);
 	}
 }
 
 void menu()
 {
-	int choose = 0, m = -1;
+	char choose = 0, m = -1;
 
-	matrix.clearDisplay();
-
-	draw_menu(&matrix);
+	controller.draw_menu();
 	unsigned long timestamp = millis(); // зберегти поточний час
 
 	do
 	{
-		int scan1 = j.scan(1);
-		int scan2 = j.scan(2);
+		int scan1 = controller.j.scan(1);
+		int scan2 = controller.j.scan(2);
 		if (scan1 == up || scan2 == up) // up
 		{
 			//choose = 4;
@@ -220,16 +203,15 @@ void menu()
 
 		if (m != -1)
 		{
-			choose_menu_item(&matrix, m, choose);
-			
+			controller.choose_menu_item(m, choose);
+
 			if (timestamp - 800 > 0)
 			{
-				buzz(1);
+				controller.buzz(1);
 				timestamp = millis();
 			}
-		}		
-	}
-	while ((digitalRead(joystick1but) == HIGH && digitalRead(joystick2but) == HIGH) || choose == 0);
+		}
+	} while ((digitalRead(joystick1but) == HIGH && digitalRead(joystick2but) == HIGH) || choose == 0);
 
 	switch (choose)
 	{
@@ -248,14 +230,14 @@ void menu()
 		MODE = MENU;
 	}
 
-	buzz(2);
+	controller.buzz(2);
 
-	matrix.clearDisplay();
+	controller.matrix.clearDisplay();
 }
 
 void updateScore() // pong
 {
-	pong_score(&matrix, player1Score, player2Score);
+	controller.pong_score(player1Score, player2Score);
 
 	if (now - overTime > 3000)
 		restartGame();
@@ -268,26 +250,26 @@ void setup() // common
 	pinMode(joystick1but, INPUT);
 	pinMode(joystick2but, INPUT);
 
-	pinMode(8, OUTPUT);//buzzer
-
+	pinMode(8, OUTPUT); //buzzer
 
 	digitalWrite(joystick1but, HIGH);
 	digitalWrite(joystick2but, HIGH);
 
-	j.calibrateJoystick();
-
 	player1Score = 0;
 	player2Score = 0;
 
-	//Serial.begin(9600);
+#ifdef SERIAL_DEBUG
+	Serial.begin(19200);
+#endif
 
+	controller.j.calbrate();
+	
 	do
 	{
 		menu();
-	}
-	while (MODE == 0);
+	} while (MODE == 0);
 
-	matrix.clearDisplay();
+	controller.matrix.clearDisplay();
 
 	if (MODE == 2) // pong
 	{
@@ -324,7 +306,7 @@ void loop() //common
 		}
 
 		// intelligently blink with the food
-		setLEDM(&matrix, food.row, food.col, 1);
+		controller.setLEDM(food.row, food.col, 1);
 
 		time = millis();
 
@@ -334,16 +316,14 @@ void loop() //common
 			do
 			{
 				scanJoystick(); // watches joystick movements
-			}
-			while (snake1Direction == 0 || snake2Direction == 0);
+			} while (snake1Direction == 0 || snake2Direction == 0);
 		}
 		else // 1 player
 		{
 			do
 			{
 				scanJoystick(); // watches joystick movements
-			}
-			while (snake1Direction == 0);
+			} while (snake1Direction == 0);
 		}
 
 		calculateSnake(); // calculates snake parameters
@@ -354,7 +334,7 @@ void loop() //common
 		{
 		}
 
-		setLEDM(&matrix, food.row, food.col, 0);
+		controller.setLEDM(food.row, food.col, 0);
 
 		time = millis();
 
@@ -366,127 +346,6 @@ void loop() //common
 	}
 }
 
-int melody[] = {
-  NOTE_E7, NOTE_E7, 0, NOTE_E7,
-  0, NOTE_C7, NOTE_E7, 0,
-  NOTE_G7, 0, 0,  0,
-  NOTE_G6, 0, 0, 0,
-
-  NOTE_C7, 0, 0, NOTE_G6,
-  0, 0, NOTE_E6, 0,
-  0, NOTE_A6, 0, NOTE_B6,
-  0, NOTE_AS6, NOTE_A6, 0,
-
-  NOTE_G6, NOTE_E7, NOTE_G7,
-  NOTE_A7, 0, NOTE_F7, NOTE_G7,
-  0, NOTE_E7, 0, NOTE_C7,
-  NOTE_D7, NOTE_B6, 0, 0,
-
-  NOTE_C7, 0, 0, NOTE_G6,
-  0, 0, NOTE_E6, 0,
-  0, NOTE_A6, 0, NOTE_B6,
-  0, NOTE_AS6, NOTE_A6, 0,
-
-  NOTE_G6, NOTE_E7, NOTE_G7,
-  NOTE_A7, 0, NOTE_F7, NOTE_G7,
-  0, NOTE_E7, 0, NOTE_C7,
-  NOTE_D7, NOTE_B6, 0, 0
-};
-//Mario main them tempo
-int tempo[] = {
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-
-  9, 9, 9,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-
-  9, 9, 9,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-};
-
-int underworld_melody[] = {
-  NOTE_C4, NOTE_C5, NOTE_A3, NOTE_A4,
-  NOTE_AS3, NOTE_AS4, 0,
-  0,
-  NOTE_C4, NOTE_C5, NOTE_A3, NOTE_A4,
-  NOTE_AS3, NOTE_AS4, 0,
-  0,
-  NOTE_F3, NOTE_F4, NOTE_D3, NOTE_D4,
-  NOTE_DS3, NOTE_DS4, 0,
-  0,
-  NOTE_F3, NOTE_F4, NOTE_D3, NOTE_D4,
-  NOTE_DS3, NOTE_DS4, 0,
-  0, NOTE_DS4, NOTE_CS4, NOTE_D4,
-  NOTE_CS4, NOTE_DS4,
-  NOTE_DS4, NOTE_GS3,
-  NOTE_G3, NOTE_CS4,
-  NOTE_C4, NOTE_FS4, NOTE_F4, NOTE_E3, NOTE_AS4, NOTE_A4,
-  NOTE_GS4, NOTE_DS4, NOTE_B3,
-  NOTE_AS3, NOTE_A3, NOTE_GS3,
-  0, 0, 0
-};
-//Underwolrd tempo
-int underworld_tempo[] = {
-  12, 12, 12, 12,
-  12, 12, 6,
-  3,
-  12, 12, 12, 12,
-  12, 12, 6,
-  3,
-  12, 12, 12, 12,
-  12, 12, 6,
-  3,
-  12, 12, 12, 12,
-  12, 12, 6,
-  6, 18, 18, 18,
-  6, 6,
-  6, 6,
-  6, 6,
-  18, 18, 18, 18, 18, 18,
-  10, 10, 10,
-  10, 10, 10,
-  3, 3, 3
-};
-
-void buzz(char melody) // common
-{
-	int t = melody * 300;
-	tone(8, t, 20);
-}
-
-void gameOverBuzz()
-{
-	int size = sizeof(underworld_melody) / sizeof(int);
-	for (int thisNote = 50; thisNote < size; thisNote++) {
-		int noteDuration = 1000 / underworld_tempo[thisNote];
-
-		tone(8, underworld_melody[thisNote], noteDuration);
-
-		int pauseBetweenNotes = noteDuration * 1.30;
-		delay(pauseBetweenNotes);
-
-		// stop the tone playing:
-		tone(8, 0, noteDuration);
-
-	}
-}
-
 ////////------- Pong ----/////
 
 void gameOver() // pong
@@ -494,13 +353,13 @@ void gameOver() // pong
 	isGameOn = false;
 	overTime = now;
 
-	matrix.clearDisplay();
+	controller.matrix.clearDisplay();
 
-	gameOverBuzz();
-	
+	controller.gameOverBuzz();
+
 	if (player1Score == 3)
 	{
-		first_win(&matrix, j);
+		controller.win_msg(1);
 		last_win = 1;
 		player1Score = 0;
 		player2Score = 0;
@@ -508,14 +367,14 @@ void gameOver() // pong
 
 	if (player2Score == 3)
 	{
-		second_win(&matrix, j);
+		controller.win_msg(2);
 		last_win = 2;
 		player1Score = 0;
 		player2Score = 0;
 	}
 
-	matrix.clearDisplay();
-	
+	controller.matrix.clearDisplay();
+
 	//int note[] = {700, 600, 500, 400, 300, 200};
 	//for(int i = 0; i < 6; i++){
 	//  tone(speakerPin, note[i], 150);
@@ -543,21 +402,21 @@ void restartGame() // pong
 	ballMovingLeft = true;
 
 	for (int i = lastp1Position; i < lastp1Position + 3; i++)
-		matrix.setLed(0, 7, i, 0);
+		controller.matrix.setLed(0, 7, i, 0);
 
 	for (int i = player1Position; i < player1Position + 3; i++)
-		matrix.setLed(0, 7, i, 1);
+		controller.matrix.setLed(0, 7, i, 1);
 
 	lastp1Position = player1Position;
 
 	for (int i = lastp2Position; i < lastp2Position + 3; i++)
-		matrix.setLed(4, 0, i, 0);
+		controller.matrix.setLed(4, 0, i, 0);
 
 	for (int i = player2Position; i < player2Position + 3; i++)
-		matrix.setLed(4, 0, i, 1);
+		controller.matrix.setLed(4, 0, i, 1);
 
-	matrix.send();
-	
+	controller.matrix.send();
+
 	lastp2Position = player2Position;
 
 	isGameOn = true;
@@ -598,7 +457,7 @@ void updateBall() // pong
 	}
 
 	bool playBuzz = false;
-	
+
 	if (ballY == 1 && ballX >= player2Position && ballX < player2Position + 3)
 	{
 		ballMovingUp = false;
@@ -625,13 +484,13 @@ void updateBall() // pong
 		gameOver();
 	}
 
-	setLEDM(&matrix, lastballY, lastballX + 8, 0, false);
-	setLEDM(&matrix, ballY, ballX + 8, 1, false);
+	controller.setLEDM(lastballY, lastballX + 8, 0, false);
+	controller.setLEDM(ballY, ballX + 8, 1, false);
 
 	if (playBuzz)
-		buzz(2);
+		controller.buzz(2);
 	else
-		buzz(1);
+		controller.buzz(1);
 
 	lastballX = ballX;
 	lastballY = ballY;
@@ -643,12 +502,12 @@ void update() // pong
 	{
 		updateBall(); // переміщення м'яча
 
-		setLEDM(&matrix, lastballY, lastballX + 8, 0, false); // знищ. минулої поз м'яча
-		setLEDM(&matrix, ballY, ballX + 8, 1, false); // відображення м'яча
+		controller.setLEDM(lastballY, lastballX + 8, 0, false); // знищ. минулої поз м'яча
+		controller.setLEDM(ballY, ballX + 8, 1, false); // відображення м'яча
 
-		matrix.send(matrix_num(ballX, ballY));
-		matrix.send(matrix_num(lastballX, lastballY));
-		
+		controller.matrix.send(matrix_num(ballX, ballY));
+		controller.matrix.send(matrix_num(lastballX, lastballY));
+
 		lastballX = ballX;
 		lastballY = ballY;
 
@@ -679,8 +538,7 @@ void generateFood()
 		{
 			food.col = random(COL_NUM);
 			food.row = random(ROW_NUM);
-		}
-		while (gameboard[food.row][food.col] > 0 || (food.row < 8 && (food.col < 8 || food.col > 15)) || (food.row > 15
+		} while (gameboard[food.row][food.col] > 0 || (food.row < 8 && (food.col < 8 || food.col > 15)) || (food.row > 15
 			&& (food.col < 8 || food.col > 15)));
 	}
 }
@@ -880,25 +738,25 @@ void calculateSnake() //snake
 	case up:
 		snake1.row--;
 		fixEdge();
-		setLEDM(&matrix, snake1.row, snake1.col, 1, false);
+		controller.setLEDM(snake1.row, snake1.col, 1, false);
 		break;
 
 	case right:
 		snake1.col++;
 		fixEdge();
-		setLEDM(&matrix, snake1.row, snake1.col, 1, false);
+		controller.setLEDM(snake1.row, snake1.col, 1, false);
 		break;
 
 	case down:
 		snake1.row++;
 		fixEdge();
-		setLEDM(&matrix, snake1.row, snake1.col, 1, false);
+		controller.setLEDM(snake1.row, snake1.col, 1, false);
 		break;
 
 	case left:
 		snake1.col--;
 		fixEdge();
-		setLEDM(&matrix, snake1.row, snake1.col, 1, false);
+		controller.setLEDM(snake1.row, snake1.col, 1, false);
 		break;
 
 	default: // if the snake is not moving, exit
@@ -910,7 +768,7 @@ void calculateSnake() //snake
 		gameOver1 = true;
 		return;
 	}
-	
+
 	if (!one_player)
 	{
 		if ((snake1.row == snake2.row && snake1.col == snake2.col)) // зіткнення 2 змій
@@ -918,34 +776,34 @@ void calculateSnake() //snake
 			gameOver1 = true;
 			return;
 		}
-		
+
 		switch (snake2Direction)
 		{
 		case up:
 			snake2.row--;
 			fixEdge();
-			setLEDM(&matrix, snake2.row, snake2.col, 1, false);
+			controller.setLEDM(snake2.row, snake2.col, 1, false);
 			break;
 
 		case right:
 			snake2.col++;
 			fixEdge();
-			setLEDM(&matrix, snake2.row, snake2.col, 1, false);
+			controller.setLEDM(snake2.row, snake2.col, 1, false);
 			break;
 
 		case down:
 			snake2.row++;
 			fixEdge();
-			setLEDM(&matrix, snake2.row, snake2.col, 1, false);
+			controller.setLEDM(snake2.row, snake2.col, 1, false);
 			break;
 
 		case left:
 			snake2.col--;
 			fixEdge();
-			setLEDM(&matrix, snake2.row, snake2.col, 1, false);
+			controller.setLEDM(snake2.row, snake2.col, 1, false);
 			break;
 
-		default: // if the snake is not moving, exit
+		default:
 			return;
 		}
 
@@ -956,7 +814,7 @@ void calculateSnake() //snake
 			return;
 		}
 	}
-	
+
 	int toBuzz = 1;
 	if (snake1.row == food.row && snake1.col == food.col) // їжа зїдена
 	{
@@ -994,12 +852,12 @@ void calculateSnake() //snake
 			}
 
 			// display the current pixel
-			setLEDM(&matrix, row, col, gameboard[row][col] == 0 ? 0 : 1, false);
+			controller.setLEDM(row, col, gameboard[row][col] == 0 ? 0 : 1, false);
 		}
 	}
 
-	buzz(toBuzz);
-	matrix.send();
+	controller.buzz(toBuzz);
+	controller.matrix.send();
 }
 
 void handleGameStates() //snake
@@ -1007,21 +865,21 @@ void handleGameStates() //snake
 	if (gameOver1 || win1 || gameOver2 || win2)
 	{
 		unrollSnake();
-		gameOverBuzz();
+		controller.gameOverBuzz();
 		int score = 0;
 
 		if (gameOver1 || win2)
 		{
-			second_win(&matrix, j);
+			controller.win_msg(2);
 			score = snake2Length - initialSnakeLength;
 		}
 		else if (gameOver2 || win1)
 		{
-			first_win(&matrix, j);
+			controller.win_msg(1);
 			score = snake1Length - initialSnakeLength;
 		}
 
-		print_score(&matrix, score, j);
+		controller.print_score(score);
 
 		// re-init the game
 		win1 = false;
@@ -1054,50 +912,60 @@ void handleGameStates() //snake
 
 		memset(gameboard, 0, sizeof(gameboard[0][0]) * COL_NUM * ROW_NUM);
 
-		matrix.clearDisplay();
+		controller.matrix.clearDisplay();
 	}
 }
 
 void unrollSnake()
 {
 	// switch off the food LED
-	setLEDM(&matrix, food.row, food.col, 0);
+	controller.setLEDM(food.row, food.col, 0);
 
 	delay(800);
 
+	int note[] = { 700, 600, 500, 400, 300, 200 };
+	for (int i = 0; i < 6; i++)
+	{
+		delay(200);
+	}
+	
 	// flash the screen 5 times
 	for (int i = 0; i < 5; i++)
 	{
+		
 		// invert the screen
 		for (int row = 0; row < ROW_NUM; row++)
 		{
 			for (int col = 0; col < COL_NUM; col++)
 			{
-				setLEDM(&matrix, row, col, gameboard[row][col] == 0 ? 1 : 0, false);
+				controller.setLEDM(row, col, gameboard[row][col] == 0 ? 1 : 0, false);
 			}
 
-			matrix.send();
 		}
-		
-		delay(10);
+
+		controller.matrix.send();
+
+		//delay(10);
+		tone(8, note[i], 150);
 
 		// invert it back
 		for (int row = 0; row < ROW_NUM; row++)
 		{
 			for (int col = 0; col < COL_NUM; col++)
 			{
-				setLEDM(&matrix, row, col, gameboard[row][col] == 0 ? 0 : 1, false);
+				controller.setLEDM(row, col, gameboard[row][col] == 0 ? 0 : 1, false);
 			}
 
-			matrix.send();
+			//controller.matrix.send();
 		}
+		controller.matrix.send();
 
-		
+
 		delay(10);
 
-		if (j.scan(1) != -1 || j.scan(2) != -1)
+		if (controller.j.scan(1) != -1 || controller.j.scan(2) != -1)
 		{
-			matrix.clearDisplay();
+			controller.matrix.clearDisplay();
 
 			return;
 		}
@@ -1113,7 +981,7 @@ void unrollSnake()
 			{
 				if (gameboard[row][col] == i)
 				{
-					setLEDM(&matrix, row, col, 0);
+					controller.setLEDM(row, col, 0);
 					delay(100);
 				}
 			}

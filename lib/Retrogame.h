@@ -110,6 +110,8 @@
 #define NOTE_D8  4699
 #define NOTE_DS8 4978
 
+class Pong;
+
 inline char matrix_num(int x, int y)
 {
 	if (x > 7 && x < 16)
@@ -146,79 +148,232 @@ enum
 };
 
 struct Point { // оголош типу даних Point
-  int row = 0, col = 0;
-  Point(int row = 0, int col = 0): row(row), col(col) {}
+	int row = 0, col = 0;
+	Point(int row = 0, int col = 0) : row(row), col(col) {}
 };
 
 class Joystic
 {
-  public:
-    Point joystickHome1;
-    Point joystickHome2;
-    const int joystickThreshold = 160;
+public:
+	Point joystickHome1;
+	Point joystickHome2;
+	const int joystickThreshold = 300;
 
-    void calibrateJoystick();
+	char scan(char player)
+	{
+		int X, Y;
+		
+#ifdef SERIAL_DEBUG
+		Serial.print((int)player);
+#endif
+		
+		if (player == 1)
+		{
+			X = analogRead(joystickX1);
+			Y = analogRead(joystickY1);
 
-    int scan(int player)
-    {
-      int X, Y;
+#ifdef SERIAL_DEBUG
+			Serial.print("-player X: ");
+			Serial.print(X);
+			Serial.print(" Y: ");
+			Serial.print(Y);
+			Serial.print(" Home X: ");
+			Serial.print(joystickHome1.row);
+			Serial.print(" Home Y: ");
+			Serial.print(joystickHome1.col);
+			Serial.print("\n");
+#endif
 
-      if (player == 1)
-      {
-        X = analogRead(joystickX1);
-        Y = analogRead(joystickY1);
+			if (X < joystickHome1.row - joystickThreshold)
+				return left;
+			if (X > joystickHome1.row + joystickThreshold)
+				return right;
+			if (Y < joystickHome1.col - joystickThreshold)
+				return down;
+			if (Y > joystickHome1.col + joystickThreshold)
+				return up;
+		}
+		else
+		{
+			X = analogRead(joystickX2);
+			Y = analogRead(joystickY2);
+			
+#ifdef SERIAL_DEBUG
+			Serial.print("-player X: ");
+			Serial.print(X);
+			Serial.print(" Y: ");
+			Serial.print(Y);
+			Serial.print(" Home X: ");
+			Serial.print(joystickHome2.row);
+			Serial.print(" Home Y: ");
+			Serial.print(joystickHome2.col);
+			Serial.print("\n");
+#endif
+			
+			if (X < joystickHome2.row - joystickThreshold)
+				return right;
+			if (X > joystickHome2.row + joystickThreshold)
+				return left;
+			if (Y < joystickHome2.col - joystickThreshold)
+				return up;
+			if (Y > joystickHome2.col + joystickThreshold)
+				return down;
+		}
 
-        if (X < joystickHome1.row - joystickThreshold)
-          return left;
-        if (X > joystickHome1.row + joystickThreshold)
-          return right;
-        if (Y < joystickHome1.col - joystickThreshold)
-          return down;
-        if (Y > joystickHome1.col + joystickThreshold)
-          return up;
-      }
-      else
-      {
-        X = analogRead(joystickX2);
-        Y = analogRead(joystickY2);
+		return -1;
+	}
 
-        if (X < joystickHome1.row - joystickThreshold)
-          return right;
-        if (X > joystickHome1.row + joystickThreshold)
-          return left;
-        if (Y < joystickHome1.col - joystickThreshold)
-          return up;
-        if (Y > joystickHome1.col + joystickThreshold)
-          return down;
-      }
+	void waitJoystic() // common
+	{
+		while (scan(1) == -1 && scan(2) == -1)
+		{
+			delay(1);
+		}
+	}
 
+	void calbrate()
+	{
+		Point values;
 
+		for (int i = 0; i < 10; i++)
+		{
+			values.row += analogRead(joystickX1);
+			values.col += analogRead(joystickY1);
+		}
+#ifdef SERIAL_DEBUG
+		Serial.print(" Test ");
+		Serial.println(values.row);
+#endif
+		
+		joystickHome1.row = values.row / 10;
+		joystickHome1.col = values.col / 10;
+		
+#ifdef SERIAL_DEBUG
+		Serial.print("New 1-player home is ");
+		Serial.print(joystickHome1.row);
+		Serial.print(" ");
+		Serial.print(joystickHome1.col);
+		Serial.print("\n");
+#endif
+		
+		values.row = 0;
+		values.col = 0;
 
-      return -1;
-    }
+		for (int i = 0; i < 10; i++)
+		{
+			values.row += analogRead(joystickX2);
+			values.col += analogRead(joystickY2);
+		}
 
-    void waitJoystic() // common
-    {
-      while (scan(1) == -1 && scan(2) == -1)
-      {
-        delay(1);
-      }
-    }
+		joystickHome2.row = values.row / 10;
+		joystickHome2.col = values.col / 10;
+		
+#ifdef SERIAL_DEBUG
+		Serial.print("New 2-player home is ");
+		Serial.print(joystickHome2.row);
+		Serial.print(" ");
+		Serial.print(joystickHome2.col);
+		Serial.print("\n");
+#endif
+	}
+	
+	Joystic()
+	{
+		calbrate();
+	}
 };
 
-void setLEDM(LedControl* matrix, int row, int col, int v, bool upd = true); //встановлення стану діода(пікселя) на рядку row(нумерація зверху) і стовпці row(нум. зліва) на v(1-включений, 0 - викл)
+#define MATRIX_NUM 5
+#define ROW_NUM 24
+#define COL_NUM 24
 
-void print_score(LedControl* matrix, int score, Joystic j); //вивести рахунок (для змійки)
+#define CLK 10
+#define CS 11
+#define DIN 12
 
-void first_win(LedControl* matrix, Joystic j); //вивести повідомлення про перемогу 1 гравця
+const PROGMEM bool icon[3][8][8] = {
+  {
+		//Snake1,
+		0, 1, 1, 0, 0, 0, 0, 0,
+		1, 0, 0, 1, 0, 0, 0, 0,
+		1, 0, 0, 0, 0, 0, 0, 0,
+		0, 1, 1, 0, 0, 0, 0, 0,
+		0, 0, 0, 1, 0, 0, 0, 1,
+		1, 0, 0, 1, 0, 0, 1, 1,
+		0, 1, 1, 0, 0, 0, 0, 1,
+		0, 0, 0, 0, 0, 0, 0, 1
+	  },
+	  {
+		  //Snake2
+		  0, 0, 0, 0, 1, 1, 0, 1,
+		  0, 0, 0, 1, 0, 0, 1, 1,
+		  0, 0, 0, 0, 1, 0, 0, 1,
+		  0, 0, 0, 0, 0, 0, 0, 0,
+		  0, 1, 0, 0, 1, 1, 0, 0,
+		  1, 0, 0, 1, 0, 0, 1, 0,
+		  1, 0, 0, 1, 0, 0, 1, 0,
+		  0, 1, 1, 0, 0, 1, 0, 0,
+		},
+		{
+			//Pong2
+			0, 1, 1, 1, 1, 1, 1, 1,
+			0, 0, 0, 0, 1, 0, 0, 1,
+			0, 0, 0, 0, 1, 0, 0, 1,
+			0, 0, 0, 0, 0, 1, 1, 0,
+			0, 0, 0, 0, 0, 0, 0, 0,
+			1, 0, 0, 1, 0, 0, 0, 0,
+			1, 1, 0, 0, 1, 0, 0, 0,
+			1, 0, 1, 1, 0, 0, 0, 0,
+		  }
+};
 
-void second_win(LedControl* matrix, Joystic j); //вивести повідомлення про перемогу 2 гравця
 
-void pong_score(LedControl* matrix, int player1Score, int player2Score); //вивести рахунок (для pong)
+class HardwareController
+{
+public:
+	LedControl matrix = LedControl(DIN, CLK, CS, 5, 6);
+	Joystic j = Joystic();
+	void setLEDM(int row, int col, int v, bool upd = true); //встановлення стану діода(пікселя) на рядку row(нумерація зверху) і стовпці row(нум. зліва) на v(1-включений, 0 - викл)
+	void win_msg(char player); //вивести повідомлення про перемогу
 
-void choose_menu_item(LedControl* matrix, int m, int choose); //блимання вибраного режиму в меню
+	LedControl getMatrix()
+	{
+		return matrix;
+	}
 
-void draw_menu(LedControl* matrix); //вивести меню
+	void buzz(char melody) // common
+	{
+		int t = melody * 300;
+		tone(8, t, 20);
+	}
+
+	void gameOverBuzz();
+
+	void draw_menu()
+	{
+		matrix.clearDisplay();
+		
+		for (int i = 0; i < 8; i++)
+		{
+			for (int j = 0; j < 8; j++)
+			{
+				matrix.setLed(0, i, j, pgm_read_byte(&(icon[0][i][j])));
+				matrix.setLed(1, i, j, pgm_read_byte(&(icon[1][i][j])));
+				//matrix.setLed(2, i, j, pgm_read_byte(&(digits[0][i][j])));
+				matrix.setLed(3, i, j, pgm_read_byte(&(icon[2][i][j])));
+				//matrix.setLed(4, i, j, pgm_read_byte(&(digits[4][i][j])));
+			}
+
+			matrix.send();
+		}
+	}
+
+	void choose_menu_item(char m, char choose); //блимання вибраного режиму в меню
+
+	void pong_score(int player1Score, int player2Score); //вивести рахунок (для pong)
+
+	void print_score(int score); //вивести рахунок (для змійки)
+};
 
 const PROGMEM bool digits[10][8][8] = {
   {
@@ -323,126 +478,40 @@ const PROGMEM bool digits[10][8][8] = {
   }
 };
 
-const PROGMEM bool icon[3][8][8] = {
-  {
-		//Snake1,
-		0, 1, 1, 0, 0, 0, 0, 0,
-		1, 0, 0, 1, 0, 0, 0, 0,
-		1, 0, 0, 0, 0, 0, 0, 0,
-		0, 1, 1, 0, 0, 0, 0, 0,
-		0, 0, 0, 1, 0, 0, 0, 1,
-		1, 0, 0, 1, 0, 0, 1, 1,
-		0, 1, 1, 0, 0, 0, 0, 1,
-		0, 0, 0, 0, 0, 0, 0, 1
-	  },
-	  {
-		  //Snake2
-		  0, 0, 0, 0, 1, 1, 0, 1,
-		  0, 0, 0, 1, 0, 0, 1, 1,
-		  0, 0, 0, 0, 1, 0, 0, 1,
-		  0, 0, 0, 0, 0, 0, 0, 0,
-		  0, 1, 0, 0, 1, 1, 0, 0,
-		  1, 0, 0, 1, 0, 0, 1, 0,
-		  1, 0, 0, 1, 0, 0, 1, 0,
-		  0, 1, 1, 0, 0, 1, 0, 0,
-		},
-		{
-			//Pong2
-			0, 1, 1, 1, 1, 1, 1, 1,
-			0, 0, 0, 0, 1, 0, 0, 1,
-			0, 0, 0, 0, 1, 0, 0, 1,
-			0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
-			1, 0, 0, 1, 0, 0, 0, 0,
-			1, 1, 0, 0, 1, 0, 0, 0,
-			1, 0, 1, 1, 0, 0, 0, 0,
-		  }
+
+const PROGMEM bool first_num[8][8] =
+{
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 1, 1, 0, 0, 0,
+	0, 0, 0, 1, 1, 0, 0, 0,
+	0, 0, 1, 1, 1, 0, 0, 0,
+	0, 0, 0, 1, 1, 0, 0, 0,
+	0, 0, 0, 1, 1, 0, 0, 0,
+	0, 0, 0, 1, 1, 0, 0, 0,
+	0, 1, 1, 1, 1, 1, 1, 0
 };
 
-const PROGMEM bool first_winMSG[8][97] = {
-  {
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-  },
-  {
-	0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0,
-	1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1,
-	1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0
-  },
-  {
-	0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1,
-	0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0
-  },
-  {
-	0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1,
-	0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0
-  },
-  {
-	0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0,
-	1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1,
-	0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0
-  },
-  {
-	0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1,
-	0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0
-  },
-  {
-	0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0,
-	0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0
-  },
-  {
-	0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
-	1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0,
-	0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0
-  }
+const PROGMEM bool second_num[8][8] = 
+{
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 1, 1, 1, 1, 0, 0},
+	{0, 1, 1, 0, 0, 1, 1, 0},
+	{0, 0, 0, 0, 0, 1, 1, 0},
+	{0, 0, 0, 0, 1, 1, 0, 0},
+	{0, 0, 1, 1, 0, 0, 0, 0},
+	{0, 1, 1, 0, 0, 0, 0, 0},
+	{0, 1, 1, 1, 1, 1, 1, 0}
 };
 
-const PROGMEM bool second_winMSG[8][97] = {
-  {
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-  },
-  {
-	0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0,
-	1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1,
-	1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0
-  },
-  {
-	0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1,
-	1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0
-  },
-  {
-	0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1,
-	1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0
-  },
-  {
-	0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0,
-	1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1,
-	1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0
-  },
-  {
-	0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1,
-	1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0
-  },
-  {
-	0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
-	1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1,
-	0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0
-  },
-  {
-	0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
-	1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0,
-	0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0
-  }
+const PROGMEM bool winMSG[8][94] = {
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 };
 
 const PROGMEM bool scoreMessage[8][66] = {
