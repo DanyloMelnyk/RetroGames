@@ -6,15 +6,7 @@
 #include "Max7219.h"
 #include "Retrogame.h"
 
-//#define joystickY1 A2
-//#define joystickX1 A3
-//#define joystick1but 3
-//
-//#define joystickY2 A0
-//#define joystickX2 A1
-//#define joystick2but 2
-
-void HardwareController::setLEDM(int row, int col, int v, bool upd)
+void HardwareController::setLEDM(int row, int col, bool v, bool upd)
 {
 	char to_update = -1;
 	if (row > 7 && row < 16)
@@ -55,54 +47,58 @@ void HardwareController::setLEDM(int row, int col, int v, bool upd)
 	}
 }
 
-void HardwareController::print_score(int score) ////// TODO !! rewrite to normal code 
+void HardwareController::print_score(int score)
 {
-	if (score < 0 || score > 99) return;
+	if (score < 0 || score > 999) return;
 
-	// specify score digits
-	int second = score % 10;
-	int first = (score / 10) % 10;
+	char third = char(score % 10);
+	char second = char((score / 10) % 10);
+	char first = char((score / 100) % 10);
 
-	for (unsigned int d = 0; d < 66 + 2 * sizeof(digits[0][0]); d++)
+	char num_size;
+	if (score > 99)
+		num_size = 3;
+	else if (score > 9)
+		num_size = 2;
+	else
+		num_size = 1;
+
+	for (unsigned int k = 0; k < sizeof(scoreMessage[0]) + 4 + (num_size * 8); k++) //  + num_size * 8
 	{
-		for (int col = 0; col < 24; col++)
+		for (unsigned int i = 0; i < 8; i++)
 		{
-			for (int row = 0; row < 8; row++)
+			for (unsigned int j = 0; j < 24; j++)
 			{
-				if (d <= 66 - 8)
+				if (j + k < 8)
+					setLEDM(i + 8, j, false, false); // Пропуск 8 пікселів 
+				else if (j + k < sizeof(scoreMessage[0]) + 8)
+					setLEDM(i + 8, j, pgm_read_byte(&scoreMessage[i][j + k - 8]), false); // Текст повідомлення
+				else if (j + k < 63 + 8 * num_size)
 				{
-					setLEDM(row + 8, col, pgm_read_byte(&(scoreMessage[row][col + d])), false);
-				}
-
-				int c = col + d - 66 + 6; // move 6 px in front of the previous message
-
-				// if the score is < 10, shift out the first digit (zero)
-				if (score < 10) c += 8;
-
-				if (c >= 0 && c < 8)
-				{
-					if (first > 0) setLEDM(row + 8, col, pgm_read_byte(&(digits[first][row][c])), false);
-					// show only if score is >= 10 (see above)
+					if (j + k > sizeof(scoreMessage[0]) + 8 * (num_size))
+						setLEDM(i + 8, j, pgm_read_byte(&digits[third][i][j + k - 63 - 8 * (num_size - 1)]), false);
+						// Остання цифра рахунку
+					else if (j + k > sizeof(scoreMessage[0]) + 8 * (num_size - 1))
+						setLEDM(i + 8, j, pgm_read_byte(&digits[second][i][j + k - 63 - 8 * (num_size - 2)]), false);
+					else
+						setLEDM(i + 8, j, pgm_read_byte(&digits[first][i][j + k - 63 - 8 * (num_size - 3)]), false);
 				}
 				else
-				{
-					c -= 8;
-					if (c >= 0 && c < 8)
-					{
-						setLEDM(row + 8, col, pgm_read_byte(&(digits[second][row][c])), false); // show always
-					}
-				}
-
-				matrix.send();
+					setLEDM(i + 8, j, false, false);
 			}
-			
+		}
+
+		matrix.send();
+		if (k > 10)
 			if (j.scan(1) != -1 || j.scan(2) != -1)
 			{
 				matrix.clearDisplay();
+				delay(10);
 
 				return;
 			}
-		}
+
+		delay(40);
 	}
 
 	matrix.clearDisplay();
@@ -131,111 +127,112 @@ void HardwareController::win_msg(char player)
 	}
 
 	matrix.clearDisplay();
-	
+
 	j.waitJoystic();
 }
 
-int melody[] = {
-  NOTE_E7, NOTE_E7, 0, NOTE_E7,
-  0, NOTE_C7, NOTE_E7, 0,
-  NOTE_G7, 0, 0,  0,
-  NOTE_G6, 0, 0, 0,
+const int melody[] = {
+	NOTE_E7, NOTE_E7, 0, NOTE_E7,
+	0, NOTE_C7, NOTE_E7, 0,
+	NOTE_G7, 0, 0, 0,
+	NOTE_G6, 0, 0, 0,
 
-  NOTE_C7, 0, 0, NOTE_G6,
-  0, 0, NOTE_E6, 0,
-  0, NOTE_A6, 0, NOTE_B6,
-  0, NOTE_AS6, NOTE_A6, 0,
+	NOTE_C7, 0, 0, NOTE_G6,
+	0, 0, NOTE_E6, 0,
+	0, NOTE_A6, 0, NOTE_B6,
+	0, NOTE_AS6, NOTE_A6, 0,
 
-  NOTE_G6, NOTE_E7, NOTE_G7,
-  NOTE_A7, 0, NOTE_F7, NOTE_G7,
-  0, NOTE_E7, 0, NOTE_C7,
-  NOTE_D7, NOTE_B6, 0, 0,
+	NOTE_G6, NOTE_E7, NOTE_G7,
+	NOTE_A7, 0, NOTE_F7, NOTE_G7,
+	0, NOTE_E7, 0, NOTE_C7,
+	NOTE_D7, NOTE_B6, 0, 0,
 
-  NOTE_C7, 0, 0, NOTE_G6,
-  0, 0, NOTE_E6, 0,
-  0, NOTE_A6, 0, NOTE_B6,
-  0, NOTE_AS6, NOTE_A6, 0,
+	NOTE_C7, 0, 0, NOTE_G6,
+	0, 0, NOTE_E6, 0,
+	0, NOTE_A6, 0, NOTE_B6,
+	0, NOTE_AS6, NOTE_A6, 0,
 
-  NOTE_G6, NOTE_E7, NOTE_G7,
-  NOTE_A7, 0, NOTE_F7, NOTE_G7,
-  0, NOTE_E7, 0, NOTE_C7,
-  NOTE_D7, NOTE_B6, 0, 0
+	NOTE_G6, NOTE_E7, NOTE_G7,
+	NOTE_A7, 0, NOTE_F7, NOTE_G7,
+	0, NOTE_E7, 0, NOTE_C7,
+	NOTE_D7, NOTE_B6, 0, 0
 };
 //Mario main them tempo
-int tempo[] = {
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
+const int tempo[] = {
+	12, 12, 12, 12,
+	12, 12, 12, 12,
+	12, 12, 12, 12,
+	12, 12, 12, 12,
 
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
+	12, 12, 12, 12,
+	12, 12, 12, 12,
+	12, 12, 12, 12,
+	12, 12, 12, 12,
 
-  9, 9, 9,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
+	9, 9, 9,
+	12, 12, 12, 12,
+	12, 12, 12, 12,
+	12, 12, 12, 12,
 
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
+	12, 12, 12, 12,
+	12, 12, 12, 12,
+	12, 12, 12, 12,
+	12, 12, 12, 12,
 
-  9, 9, 9,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-  12, 12, 12, 12,
-};
-
-int underworld_melody[] = {
-  NOTE_C4, NOTE_C5, NOTE_A3, NOTE_A4,
-  NOTE_AS3, NOTE_AS4, 0,
-  0,
-  NOTE_C4, NOTE_C5, NOTE_A3, NOTE_A4,
-  NOTE_AS3, NOTE_AS4, 0,
-  0,
-  NOTE_F3, NOTE_F4, NOTE_D3, NOTE_D4,
-  NOTE_DS3, NOTE_DS4, 0,
-  0,
-  NOTE_F3, NOTE_F4, NOTE_D3, NOTE_D4,
-  NOTE_DS3, NOTE_DS4, 0,
-  0, NOTE_DS4, NOTE_CS4, NOTE_D4,
-  NOTE_CS4, NOTE_DS4,
-  NOTE_DS4, NOTE_GS3,
-  NOTE_G3, NOTE_CS4,
-  NOTE_C4, NOTE_FS4, NOTE_F4, NOTE_E3, NOTE_AS4, NOTE_A4,
-  NOTE_GS4, NOTE_DS4, NOTE_B3,
-  NOTE_AS3, NOTE_A3, NOTE_GS3,
-  0, 0, 0
-};
-//Underwolrd tempo
-int underworld_tempo[] = {
-  12, 12, 12, 12,
-  12, 12, 6,
-  3,
-  12, 12, 12, 12,
-  12, 12, 6,
-  3,
-  12, 12, 12, 12,
-  12, 12, 6,
-  3,
-  12, 12, 12, 12,
-  12, 12, 6,
-  6, 18, 18, 18,
-  6, 6,
-  6, 6,
-  6, 6,
-  18, 18, 18, 18, 18, 18,
-  10, 10, 10,
-  10, 10, 10,
-  3, 3, 3
+	9, 9, 9,
+	12, 12, 12, 12,
+	12, 12, 12, 12,
+	12, 12, 12, 12,
 };
 
 void HardwareController::gameOverBuzz()
 {
+	const int underworld_melody[] = {
+		NOTE_C4, NOTE_C5, NOTE_A3, NOTE_A4,
+		NOTE_AS3, NOTE_AS4, 0,
+		0,
+		NOTE_C4, NOTE_C5, NOTE_A3, NOTE_A4,
+		NOTE_AS3, NOTE_AS4, 0,
+		0,
+		NOTE_F3, NOTE_F4, NOTE_D3, NOTE_D4,
+		NOTE_DS3, NOTE_DS4, 0,
+		0,
+		NOTE_F3, NOTE_F4, NOTE_D3, NOTE_D4,
+		NOTE_DS3, NOTE_DS4, 0,
+		0, NOTE_DS4, NOTE_CS4, NOTE_D4,
+		NOTE_CS4, NOTE_DS4,
+		NOTE_DS4, NOTE_GS3,
+		NOTE_G3, NOTE_CS4,
+		NOTE_C4, NOTE_FS4, NOTE_F4, NOTE_E3, NOTE_AS4, NOTE_A4,
+		NOTE_GS4, NOTE_DS4, NOTE_B3,
+		NOTE_AS3, NOTE_A3, NOTE_GS3,
+		0, 0, 0
+	};
+
 	int size = sizeof(underworld_melody) / sizeof(int);
+	//Underwolrd tempo
+	const int underworld_tempo[] = {
+		12, 12, 12, 12,
+		12, 12, 6,
+		3,
+		12, 12, 12, 12,
+		12, 12, 6,
+		3,
+		12, 12, 12, 12,
+		12, 12, 6,
+		3,
+		12, 12, 12, 12,
+		12, 12, 6,
+		6, 18, 18, 18,
+		6, 6,
+		6, 6,
+		6, 6,
+		18, 18, 18, 18, 18, 18,
+		10, 10, 10,
+		10, 10, 10,
+		3, 3, 3
+	};
+
 	for (int thisNote = 50; thisNote < size; thisNote++)
 	{
 		int noteDuration = 1000 / underworld_tempo[thisNote];
@@ -261,10 +258,10 @@ void HardwareController::choose_menu_item(char m, char choose)
 
 		matrix.send(m);
 	}
-	
+
 	delay(10);
 
-	for (int row = 0; row < 8; row++)	// invert it back
+	for (int row = 0; row < 8; row++) // invert it back
 	{
 		for (int col = 0; col < 8; col++)
 		{
@@ -273,7 +270,7 @@ void HardwareController::choose_menu_item(char m, char choose)
 
 		matrix.send(m);
 	}
-	
+
 	delay(100);
 }
 
