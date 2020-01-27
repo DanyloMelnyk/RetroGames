@@ -1,0 +1,8 @@
+RetrogamesLib.c:257:6:draw_menu	16	static
+RetrogamesLib.c:278:6:calibrate	24	static
+RetrogamesLib.c:318:6:waitJoystic	8	static
+RetrogamesLib.c:325:6:print_score	40	static
+RetrogamesLib.c:387:6:win_msg	40	static
+RetrogamesLib.c:411:6:choose_menu_item	32	static
+RetrogamesLib.c:435:6:pong_score	24	static
+RetrogamesLib.c:445:8:scanJoystick	24	static

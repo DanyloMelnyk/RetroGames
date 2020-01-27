@@ -1,0 +1,10 @@
+Snake.c:37:6:SnakeLoop	8	static
+Snake.c:76:6:SnakeScanJoystick	24	static
+Snake.c:115:6:generateFood	8	static
+Snake.c:140:6:fixEdge	4	static
+Snake.c:307:6:initialize	4	static
+Snake.c:347:6:calculateSnake	32	static
+Snake.c:477:6:handleGameStates	16	static
+Snake.c:533:6:unrollSnake	40	static
+Snake.c:601:6:SnakeSetup	8	static
+Snake.c:607:6:SnakeSetPlayerNum	16	static

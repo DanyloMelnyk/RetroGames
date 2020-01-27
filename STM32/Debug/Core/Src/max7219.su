@@ -1,0 +1,11 @@
+max7219.c:56:6:matrixSetup	24	static
+max7219.c:81:6:shutdown	16	static
+max7219.c:92:6:setScanLimit	16	static
+max7219.c:101:6:setIntensity	16	static
+max7219.c:110:6:clearDisplay	24	static
+max7219.c:123:6:clearAllDisplay	16	static
+max7219.c:129:6:setLed	32	static
+max7219.c:150:6:setLEDM	32	static
+max7219.c:180:6:send	24	static
+max7219.c:188:6:sendAll	16	static
+max7219.c:194:6:spiTransfer	40	static
